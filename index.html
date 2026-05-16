@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>かけい — 家計簿</title>
+<title>家計簿</title>
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="かけい">
+<meta name="apple-mobile-web-app-title" content="家計簿">
 <meta name="theme-color" content="#F5F2EC">
 <link rel="apple-touch-icon" href="icon-192.png">
 
@@ -34,9 +34,10 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 
 /* ── PWA スタンドアロン (iPhone にインストール後) ── */
 @media (display-mode: standalone) {
-  body{background:#F5F2EC;padding:0;justify-content:flex-start;}
-  .po{background:none;border-radius:0;padding:0;box-shadow:none;width:100%;}
-  .ph{width:100%;height:100dvh;border-radius:0;}
+  html,body{height:100%;overflow:hidden;}
+  body{background:#F5F2EC;padding:0;display:block;}
+  .po{background:none;border-radius:0;padding:0;box-shadow:none;width:100%;height:100%;}
+  .ph{width:100%;height:100%;min-height:100dvh;border-radius:0;}
   .sb{height:calc(env(safe-area-inset-top) + 44px);padding-top:env(safe-area-inset-top);padding-bottom:7px;}
   .di{display:none;}
   .tb{padding-bottom:env(safe-area-inset-bottom);}
@@ -44,9 +45,10 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 }
 /* モバイルブラウザでも同様に全画面表示 */
 @media (max-width: 480px) {
-  body{background:#F5F2EC;padding:0;justify-content:flex-start;}
-  .po{background:none;border-radius:0;padding:0;box-shadow:none;width:100%;}
-  .ph{width:100%;height:100dvh;border-radius:0;}
+  html,body{height:100%;overflow:hidden;}
+  body{background:#F5F2EC;padding:0;display:block;}
+  .po{background:none;border-radius:0;padding:0;box-shadow:none;width:100%;height:100%;}
+  .ph{width:100%;height:100%;min-height:100dvh;border-radius:0;}
   .sb{height:calc(env(safe-area-inset-top) + 44px);padding-top:env(safe-area-inset-top);}
   .di{top:calc(env(safe-area-inset-top) + 5px);}
   .tb{padding-bottom:env(safe-area-inset-bottom);}
@@ -312,7 +314,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
   <!-- Loading screen -->
   <div class="loading-sc" id="loading-sc">
     <div class="loading-logo">🌿</div>
-    <div class="loading-title">かけい</div>
+    <div class="loading-title">家計簿</div>
     <div class="loading-sub">読み込み中<span class="loading-dot">...</span></div>
   </div>
 
@@ -332,7 +334,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 
     <!-- ── HOME ── -->
     <div class="sc on" id="sc-home">
-      <div class="nv"><div style="display:flex;justify-content:space-between;align-items:flex-end;"><div><div class="nt">かけい</div><div class="ns" id="home-month-lbl">2026年5月</div></div><span style="font-size:19px;cursor:pointer;" onclick="toast('通知はありません')">🔔</span></div></div>
+      <div class="nv"><div style="display:flex;justify-content:space-between;align-items:flex-end;"><div><div class="nt">家計簿</div><div class="ns" id="home-month-lbl">2026年5月</div></div><span style="font-size:19px;cursor:pointer;" onclick="toast('通知はありません')">🔔</span></div></div>
       <div class="bc">
         <div class="bl">今月の残高</div><div class="ba" id="h-bal">¥ 0</div>
         <div class="br"><div><div class="bil">💰 収入</div><div class="biv" id="h-inc">¥ 0</div></div><div><div class="bil">💸 支出</div><div class="biv" id="h-exp">¥ 0</div></div></div>
@@ -456,7 +458,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
       <div class="sg">
         <div class="sr" onclick="showInstallGuide()"><span class="si2">📱</span><span class="sl">ホーム画面に追加</span><span class="sav">›</span></div>
       </div>
-      <div style="text-align:center;padding:18px;font-size:10px;color:#9ca3af;">かけい v1.0.0 — データはデバイス内にのみ保存</div>
+      <div style="text-align:center;padding:18px;font-size:10px;color:#9ca3af;">家計簿 v1.0.0 — データはデバイス内にのみ保存</div>
     </div>
 
     <!-- ── Input Overlay ── -->
@@ -625,38 +627,6 @@ function sI(txs){return txs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amoun
 function uid(){return'tx'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function todayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 
-// ── サンプルデータ（初回起動時のみ投入）
-function seedData(){
-  const ym=CUR_YM;
-  const py=prevYM(ym);
-  return[
-    {id:uid(),type:'income', amount:280000,category_id:'salary',    date:ym+'-25',  memo:'今月の給与'},
-    {id:uid(),type:'expense',amount:80000, category_id:'housing',   date:ym+'-01',  memo:'家賃'},
-    {id:uid(),type:'expense',amount:12000, category_id:'insurance', date:ym+'-05',  memo:'生命保険'},
-    {id:uid(),type:'expense',amount:8200,  category_id:'utilities', date:ym+'-10',  memo:'電気・ガス'},
-    {id:uid(),type:'expense',amount:1980,  category_id:'subsc',     date:ym+'-01',  memo:'Netflix'},
-    {id:uid(),type:'expense',amount:980,   category_id:'subsc',     date:ym+'-01',  memo:'Spotify'},
-    {id:uid(),type:'expense',amount:600,   category_id:'subsc',     date:ym+'-03',  memo:'Amazon Prime'},
-    {id:uid(),type:'expense',amount:10000, category_id:'invest',    date:ym+'-15',  memo:'積立NISA'},
-    {id:uid(),type:'expense',amount:1200,  category_id:'food',      date:ym+'-02',  memo:'コンビニ'},
-    {id:uid(),type:'expense',amount:3500,  category_id:'social',    date:ym+'-03',  memo:'ランチ会'},
-    {id:uid(),type:'expense',amount:4800,  category_id:'daily',     date:ym+'-05',  memo:'日用品'},
-    {id:uid(),type:'expense',amount:6000,  category_id:'pet',       date:ym+'-07',  memo:'猫の病院'},
-    {id:uid(),type:'expense',amount:8500,  category_id:'food',      date:ym+'-08',  memo:'スーパー'},
-    {id:uid(),type:'expense',amount:3200,  category_id:'health',    date:ym+'-12',  memo:'病院・薬'},
-    {id:uid(),type:'expense',amount:7200,  category_id:'food',      date:ym+'-14',  memo:'スーパー'},
-    {id:uid(),type:'expense',amount:35000, category_id:'credit',    date:ym+'-27',  memo:'クレカ引き落とし'},
-    // 先月分
-    {id:uid(),type:'income', amount:280000,category_id:'salary',    date:py+'-25',  memo:'先月の給与'},
-    {id:uid(),type:'expense',amount:80000, category_id:'housing',   date:py+'-01',  memo:'家賃'},
-    {id:uid(),type:'expense',amount:12000, category_id:'insurance', date:py+'-05',  memo:'生命保険'},
-    {id:uid(),type:'expense',amount:7800,  category_id:'utilities', date:py+'-10',  memo:'電気・ガス'},
-    {id:uid(),type:'expense',amount:35000, category_id:'credit',    date:py+'-27',  memo:'クレカ引き落とし'},
-    {id:uid(),type:'expense',amount:1980,  category_id:'subsc',     date:py+'-01',  memo:'Netflix'},
-    {id:uid(),type:'expense',amount:5500,  category_id:'transport', date:py+'-04',  memo:'定期券'},
-    {id:uid(),type:'expense',amount:10000, category_id:'invest',    date:py+'-15',  memo:'積立NISA'},
-  ];
-}
 
 // ═══════════════════════════════════════════════════════
 //  DB 初期化
@@ -672,13 +642,6 @@ async function initDB(){
 
     // 取引ロード
     TXS=await db.transactions.toArray();
-
-    // 初回: サンプルデータ投入
-    if(TXS.length===0){
-      const seeds=seedData();
-      await db.transactions.bulkAdd(seeds);
-      TXS=seeds;
-    }
 
     // 前月コピー候補をキャッシュ
     refreshPrevMo();

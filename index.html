@@ -110,6 +110,8 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 
 /* Calendar */
 .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:#fff;border-bottom:1px solid #f0f0f0;padding:0 8px;}
+#sc-cal{overflow-y:hidden;display:flex;flex-direction:column;}
+.cal-scroll{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;}
 .cdow{text-align:center;font-size:10px;font-weight:600;color:#9ca3af;padding:6px 0;}
 .cdow.su{color:#ef4444;}.cdow.sa{color:#3b82f6;}
 .cal-grid{background:#fff;padding:4px 8px;}
@@ -376,12 +378,14 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         </div>
       </div>
       <div class="cal-dow"><div class="cdow su">日</div><div class="cdow">月</div><div class="cdow">火</div><div class="cdow">水</div><div class="cdow">木</div><div class="cdow">金</div><div class="cdow sa">土</div></div>
-      <div class="cal-grid" id="cal-grid"></div>
-      <div id="day-panel" style="margin:8px 13px 0;display:none;">
-        <div class="day-panel-hdr"><span id="day-panel-date" class="day-panel-date"></span><span id="day-panel-total" class="day-panel-total"></span></div>
-        <div class="txw" id="day-tx-list" style="border-radius:0 0 12px 12px;margin:0;border:1px solid #A8D49A;border-top:none;"></div>
+      <div class="cal-scroll">
+        <div class="cal-grid" id="cal-grid"></div>
+        <div id="day-panel" style="margin:8px 13px 0;display:none;">
+          <div class="day-panel-hdr"><span id="day-panel-date" class="day-panel-date"></span><span id="day-panel-total" class="day-panel-total"></span></div>
+          <div class="txw" id="day-tx-list" style="border-radius:0 0 12px 12px;margin:0;border:1px solid #A8D49A;border-top:none;"></div>
+        </div>
+        <div class="spacer"></div>
       </div>
-      <div class="spacer"></div>
     </div>
 
     <!-- ── REPORT ── -->

@@ -958,11 +958,12 @@ function rAnnual(){
   document.getElementById('r-yr-lbl').textContent=`${curY}年`;
   document.getElementById('annual-chart-lbl').textContent=`${curY}年 月別推移`;
   const months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const subMo=SUBS.reduce((a,s)=>a+s.amount,0); // 月次サブスク合計
   const incArr=Array(12).fill(0);const expArr=Array(12).fill(0);
   for(let mm=1;mm<=12;mm++){
     const ym=`${curY}-${String(mm).padStart(2,'0')}`;
     const txs=mTx(ym);
-    incArr[mm-1]=sI(txs);expArr[mm-1]=sE(txs);
+    incArr[mm-1]=sI(txs);expArr[mm-1]=sE(txs)+subMo; // サブスク込み
   }
   const totInc=incArr.reduce((a,v)=>a+v,0);
   const totExp=expArr.reduce((a,v)=>a+v,0);
@@ -975,7 +976,7 @@ function rAnnual(){
   const ac2=document.getElementById('annualChart');
   if(ac2)S.charts.a=new Chart(ac2.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'収入',data:incArr,backgroundColor:'rgba(74,130,60,.6)',borderRadius:3},{label:'支出',data:expArr,backgroundColor:'rgba(192,104,74,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>c.raw?(' '+fmt(c.raw)):' —'}}},scales:{y:{ticks:{callback:v=>v?(Math.round(v/1000)/10)+'万':'',font:{size:8}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:8}},grid:{display:false}}}}});
   // Table: 当年なら当月まで、過去/未来は12ヶ月全表示
-  const curMo=(curY===baseY)?parseInt(CUR_YM.split('-')[1]):12;
+  const curMo=12; // 当年含め12ヶ月すべて表示（データなしは—）
   let tblHtml='';
   for(let mm=1;mm<=curMo;mm++){
     const inc=incArr[mm-1],exp=expArr[mm-1];

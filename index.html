@@ -30,7 +30,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .st{font-size:15px;font-weight:700;color:#111;}
 .si{display:flex;align-items:center;gap:4px;}
 .ac{flex:1;overflow:hidden;position:relative;}
-.sc{position:absolute;inset:0;overflow-y:scroll;background:#F5F2EC;display:none;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;}
+.sc{position:absolute;inset:0;overflow-y:scroll;background:#F5F2EC;display:none;touch-action:pan-y;overscroll-behavior:contain;}
 .sc.on{display:block;}
 
 /* ── PWA スタンドアロン (iPhone にインストール後) ── */
@@ -202,7 +202,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 /* Overlays */
 .ov{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;align-items:flex-end;}
 .ov.on{display:flex;}
-.sh{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:88%;overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:22px;}
+.sh{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:88%;overflow-y:scroll;overscroll-behavior:contain;padding-bottom:22px;}
 .amt-fld{background:#f9fafb;border:2px solid #e5e7eb;border-radius:12px;padding:10px 16px;font-size:28px;font-weight:700;color:#111;text-align:right;cursor:pointer;margin:0 13px 12px;min-height:54px;display:flex;align-items:center;justify-content:flex-end;transition:border-color .15s,background .15s;}
 .amt-fld.focused{border-color:#3A7030;background:#f0fdf4;}
 .np-panel{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #e5e7eb;z-index:300;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);padding-bottom:env(safe-area-inset-bottom,0px);}
@@ -254,7 +254,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 /* Add Cat */
 .aco{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:70;display:none;align-items:flex-end;}
 .aco.on{display:flex;}
-.ash{background:#fff;border-radius:20px 20px 0 0;width:100%;padding:0 0 28px;}
+.ash{background:#fff;border-radius:20px 20px 0 0;width:100%;padding:0 0 28px;overflow-y:auto;max-height:85vh;overscroll-behavior:contain;}
 .fld{font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;padding:4px 14px 6px;}
 .fli{width:calc(100% - 28px);margin:0 14px 12px;padding:11px 12px;border:1px solid #e5e7eb;border-radius:11px;font-size:15px;font-family:inherit;background:#f9fafb;outline:none;color:#111;}
 .clrg{display:flex;gap:8px;padding:0 14px;margin-bottom:14px;flex-wrap:wrap;}
@@ -1395,7 +1395,7 @@ async function addCat(){
   const name=document.getElementById('nc-name').value.trim();
   const icon=document.getElementById('nc-icon').value.trim()||'⭐';
   if(!name){toast('カテゴリ名を入力してください');return;}
-  if(aC().find(c=>c.name===name)){toast('同じ名前が既にあります');return;}
+  if(aC().find(c=>c.name===name&&c.type===S.newCatType)){toast('同じ名前が既にあります');return;}
   const cat={id:'c_'+uid(),name,icon,color:S.newCatColor,type:S.newCatType,is_custom:true};
   CC.push(cat);
   await db.customCats.add(cat);
@@ -1594,12 +1594,6 @@ window.addEventListener('load',()=>{
 window.addEventListener('load',()=>{
   document.getElementById('d-inp').value=todayStr();
   initDB();
-  // 8秒タイムアウト：それでもローディングなら再試行ボタンを表示
-  setTimeout(()=>showLoadErr(),8000);
-});
-</script>
-</body>
-</html>initDB();
   // 8秒タイムアウト：それでもローディングなら再試行ボタンを表示
   setTimeout(()=>showLoadErr(),8000);
 });

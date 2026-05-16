@@ -170,13 +170,13 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .sav-bar{height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden;margin-top:5px;}
 .sav-fill{height:100%;background:linear-gradient(90deg,#5A9A50,#3A7030);border-radius:3px;}
 .month-tbl{background:#fff;border-radius:16px;margin:0 13px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);}
-.mtbl-hdr{display:grid;grid-template-columns:30px 1fr 1fr 1fr;padding:8px 12px;border-bottom:1px solid #f0f0f0;}
-.mtbl-h{font-size:10px;font-weight:600;color:#9ca3af;text-transform:uppercase;}
-.mtbl-row{display:grid;grid-template-columns:30px 1fr 1fr 1fr;padding:8px 12px;border-bottom:1px solid #f5f5f7;}
+.mtbl-hdr{display:grid;grid-template-columns:28px 1fr 1fr 1fr;padding:6px 10px;border-bottom:1px solid #f0f0f0;}
+.mtbl-h{font-size:9px;font-weight:600;color:#9ca3af;text-transform:uppercase;}
+.mtbl-row{display:grid;grid-template-columns:28px 1fr 1fr 1fr;padding:4px 10px;border-bottom:1px solid #f5f5f7;}
 .mtbl-row:last-child{border-bottom:none;}
-.mtbl-m{font-size:12px;font-weight:600;color:#111;}
-.mtbl-v{font-size:11px;font-variant-numeric:tabular-nums;}
-.mtbl-b{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;}
+.mtbl-m{font-size:11px;font-weight:600;color:#111;}
+.mtbl-v{font-size:10px;font-variant-numeric:tabular-nums;}
+.mtbl-b{font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;}
 
 /* Subscription */
 .sub-hd{background:linear-gradient(135deg,#8b5cf6,#6d28d9);border-radius:20px;padding:18px;margin:11px 13px;color:#fff;box-shadow:0 4px 18px rgba(139,92,246,.3);}
@@ -450,7 +450,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
           <button class="nb sp" style="height:30px;width:30px;font-size:17px;border-radius:50%;padding:0;" onclick="chYr(1)">›</button>
         </div>
         <div class="ann-sum">
-          <div class="ann-c"><div class="ann-l">年間収入</div><div class="ann-v" id="an-inc">---</div></div>
+          <div class="ann-c" style="display:flex;flex-direction:column;align-items:center;justify-content:center;"><div class="ann-l">年間収入</div><div class="ann-v" id="an-inc">---</div></div>
           <div class="ann-c">
             <div class="ann-l">年間支出</div>
             <div style="font-size:8px;color:#9ca3af;margin-bottom:1px;">投資込み</div>
@@ -468,9 +468,9 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
             <div class="sav-bar"><div class="sav-fill" id="an-sbar-ni" style="width:0%;background:#94a3b8;"></div></div>
           </div>
         </div>
-        <div class="card" style="padding:13px;"><div style="font-size:13px;font-weight:600;color:#111;margin-bottom:7px;" id="annual-chart-lbl">年別推移</div><div style="height:130px;"><canvas id="annualChart"></canvas></div></div>
         <div class="st2">月別内訳</div>
         <div class="month-tbl"><div class="mtbl-hdr"><span class="mtbl-h">月</span><span class="mtbl-h" style="text-align:right;">収入</span><span class="mtbl-h" style="text-align:right;">支出</span><span class="mtbl-h" style="text-align:right;">差引</span></div><div id="mtbl-body"></div></div>
+        <div class="card" style="padding:13px;margin-top:11px;"><div style="font-size:13px;font-weight:600;color:#111;margin-bottom:7px;" id="annual-chart-lbl">年別推移</div><div style="height:130px;"><canvas id="annualChart"></canvas></div></div>
         <div class="spacer"></div>
       </div>
 
@@ -1493,6 +1493,7 @@ function cpOvClose(e){if(e.target===document.getElementById('cp-ov'))closeCpModa
 
 // ═══════════════════════════════════════════════════════
 //  CATEGORY MANAGER
+// ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
 //  SERVICE WORKER 登録
 // ═══════════════════════════════════════════════════════════

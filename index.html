@@ -451,8 +451,22 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         </div>
         <div class="ann-sum">
           <div class="ann-c"><div class="ann-l">年間収入</div><div class="ann-v" id="an-inc">---</div></div>
-          <div class="ann-c"><div class="ann-l">年間支出</div><div class="ann-v" id="an-exp">---</div></div>
-          <div class="ann-c"><div class="ann-l">貯蓄率</div><div class="ann-v" id="an-rate">---%</div><div class="sav-bar"><div class="sav-fill" id="an-sbar" style="width:0%;"></div></div></div>
+          <div class="ann-c">
+            <div class="ann-l">年間支出</div>
+            <div style="font-size:8px;color:#9ca3af;margin-bottom:1px;">投資込み</div>
+            <div class="ann-v" id="an-exp">---</div>
+            <div style="font-size:8px;color:#9ca3af;margin-top:5px;margin-bottom:1px;">投資除く</div>
+            <div class="ann-v" id="an-exp-ni" style="color:#6b7280;">---</div>
+          </div>
+          <div class="ann-c">
+            <div class="ann-l">貯蓄率</div>
+            <div style="font-size:8px;color:#9ca3af;margin-bottom:1px;">投資込み</div>
+            <div class="ann-v" id="an-rate">---%</div>
+            <div class="sav-bar"><div class="sav-fill" id="an-sbar" style="width:0%;"></div></div>
+            <div style="font-size:8px;color:#9ca3af;margin-top:5px;margin-bottom:1px;">投資除く</div>
+            <div class="ann-v" id="an-rate-ni" style="color:#6b7280;">---%</div>
+            <div class="sav-bar"><div class="sav-fill" id="an-sbar-ni" style="width:0%;background:#94a3b8;"></div></div>
+          </div>
         </div>
         <div class="card" style="padding:13px;"><div style="font-size:13px;font-weight:600;color:#111;margin-bottom:7px;" id="annual-chart-lbl">年別推移</div><div style="height:130px;"><canvas id="annualChart"></canvas></div></div>
         <div class="st2">月別内訳</div>
@@ -1161,19 +1175,27 @@ function rAnnual(){
   document.getElementById('annual-chart-lbl').textContent=`${curY}年 月別推移`;
   const months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   const subMo=SUBS.reduce((a,s)=>a+s.amount,0); // 月次サブスク合計
-  const incArr=Array(12).fill(0);const expArr=Array(12).fill(0);
+  const incArr=Array(12).fill(0);const expArr=Array(12).fill(0);const invExpArr=Array(12).fill(0);
   for(let mm=1;mm<=12;mm++){
     const ym=`${curY}-${String(mm).padStart(2,'0')}`;
     const txs=mTx(ym);
     incArr[mm-1]=sI(txs);expArr[mm-1]=sE(txs)+subMo; // サブスク込み
+    // 投資カテゴリ（保険・株/NISA）の支出額
+    invExpArr[mm-1]=txs.filter(t=>t.category_id==='insurance'||t.category_id==='invest').reduce((a,t)=>a+t.amount,0);
   }
   const totInc=incArr.reduce((a,v)=>a+v,0);
   const totExp=expArr.reduce((a,v)=>a+v,0);
+  const totInvExp=invExpArr.reduce((a,v)=>a+v,0);
+  const totExpNi=totExp-totInvExp; // 投資除外の支出
   const rate=totInc>0?Math.round((totInc-totExp)/totInc*100):0;
+  const rateNi=totInc>0?Math.round((totInc-totExpNi)/totInc*100):0;
   document.getElementById('an-inc').textContent=fmt(totInc);
   document.getElementById('an-exp').textContent=fmt(totExp);
+  document.getElementById('an-exp-ni').textContent=fmt(totExpNi);
   document.getElementById('an-rate').textContent=rate+'%';
   document.getElementById('an-sbar').style.width=Math.max(0,rate)+'%';
+  document.getElementById('an-rate-ni').textContent=rateNi+'%';
+  document.getElementById('an-sbar-ni').style.width=Math.max(0,rateNi)+'%';
   if(S.charts.a)S.charts.a.destroy();
   const ac2=document.getElementById('annualChart');
   if(ac2&&typeof Chart!=='undefined')try{S.charts.a=new Chart(ac2.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'収入',data:incArr,backgroundColor:'rgba(74,130,60,.6)',borderRadius:3},{label:'支出',data:expArr,backgroundColor:'rgba(192,104,74,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>c.raw?(' '+fmt(c.raw)):' —'}}},scales:{y:{ticks:{callback:v=>v?fmt(v):'',font:{size:7}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:8}},grid:{display:false}}}}});}catch(e){console.warn('annual chart:',e.message);}
@@ -1471,116 +1493,6 @@ function cpOvClose(e){if(e.target===document.getElementById('cp-ov'))closeCpModa
 
 // ═══════════════════════════════════════════════════════
 //  CATEGORY MANAGER
-// ═══════════════════════════════════════════════════════
-function openCatMgr(){lockScroll();rCatMgr();document.getElementById('cat-fo').classList.add('on');}
-function closeCatMgr(){unlockScroll();document.getElementById('cat-fo').classList.remove('on');}
-function rCatMgr(){
-  ['expense','income'].forEach(type=>{
-    const id=type==='expense'?'exp-cl':'inc-cl';
-    document.getElementById(id).innerHTML=aC().filter(c=>c.type===type).map(c=>`<div class="cmi"><div class="cmii" style="background:${c.color}20;">${c.icon}</div><span class="cmin">${c.name}${c.is_custom?'<span class="csb">カスタム</span>':''}</span><span class="cmit" style="background:${type==='expense'?'#fef2f2':'#f0fdf4'};color:${type==='expense'?'#ef4444':'#22c55e'};">${type==='expense'?'支出':'収入'}</span>${c.is_custom?`<button class="cmid" onclick="delCat('${c.id}')">🗑</button>`:'<div style="width:28px;"></div>'}</div>`).join('');
-  });updCatCnt();
-}
-async function delCat(id){
-  CC=CC.filter(c=>c.id!==id);
-  await db.customCats.delete(id);
-  rCatMgr();toast('カテゴリを削除しました');
-}
-function updCatCnt(){const n=aC().length;const el=document.getElementById('cat-cnt');if(el)el.textContent=n+'カテゴリ';}
-function openAddCat(){lockScroll();S.newCatColor=COLORS[0];S.newCatType='expense';document.getElementById('nc-name').value='';document.getElementById('nc-icon').value='';document.getElementById('nc-exp').classList.add('on');document.getElementById('nc-inc').classList.remove('on');rClrGrid();document.getElementById('add-cat-ov').classList.add('on');}
-function closeAddCat(){unlockScroll();document.getElementById('add-cat-ov').classList.remove('on');}
-function acOvClose(e){if(e.target===document.getElementById('add-cat-ov'))closeAddCat();}
-function setNcType(t){S.newCatType=t;document.getElementById('nc-exp').classList.toggle('on',t==='expense');document.getElementById('nc-inc').classList.toggle('on',t==='income');}
-function rClrGrid(){document.getElementById('color-grid').innerHTML=COLORS.map(col=>`<div class="clrd ${S.newCatColor===col?'on':''}" style="background:${col};" onclick="pickClr('${col}')"></div>`).join('');}
-function pickClr(col){S.newCatColor=col;rClrGrid();}
-async function addCat(){
-  const name=document.getElementById('nc-name').value.trim();
-  const icon=document.getElementById('nc-icon').value.trim()||'⭐';
-  if(!name){toast('カテゴリ名を入力してください');return;}
-  if(aC().find(c=>c.name===name&&c.type===S.newCatType)){toast('同じ名前が既にあります');return;}
-  const cat={id:'c_'+uid(),name,icon,color:S.newCatColor,type:S.newCatType,is_custom:true};
-  CC.push(cat);
-  await db.customCats.add(cat);
-  closeAddCat();rCatMgr();updCatCnt();toast(`${icon}「${name}」を追加しました ✓`);
-}
-
-// ═══════════════════════════════════════════════════════
-//  SETTINGS
-// ═══════════════════════════════════════════════════════
-function updBudgetSv(){
-  const el=document.getElementById('budget-sv');
-  if(el)el.textContent=fmt(BUDGET);
-}
-function editBudget(){
-  const v=prompt('月次予算を入力してください（円）',BUDGET);
-  const n=parseInt(v);
-  if(!n||n<=0)return;
-  BUDGET=n;
-  dbSaveSetting('budget',n);
-  updBudgetSv();
-  rHome();
-  toast('予算を更新しました ✓');
-}
-function doExp(){
-  const data=JSON.stringify({version:'1.0',exportedAt:new Date().toISOString(),budget:BUDGET,customCategories:CC,subscriptions:SUBS,transactions:TXS},null,2);
-  const a=document.createElement('a');
-  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
-  a.download='kakeibo-backup.json';
-  a.click();
-  toast('📦 JSONバックアップを出力しました ✓');
-}
-async function loadJson(input){
-  const file=input.files[0];if(!file)return;
-  const text=await file.text();
-  try{
-    const data=JSON.parse(text);
-    if(!data.transactions||!Array.isArray(data.transactions))throw new Error();
-    // 既存IDのセットを作成（重複スキップ用）
-    const existIds=new Set(TXS.map(t=>t.id));
-    const newTxs=data.transactions.filter(t=>!existIds.has(t.id));
-    const existSubIds=new Set(SUBS.map(s=>s.id));
-    const newSubs=(data.subscriptions||[]).filter(s=>!existSubIds.has(s.id));
-    if(!confirm(`取引 ${newTxs.length}件・サブスク ${newSubs.length}件を追加します。\n（IDが重複するものはスキップ）`))return;
-    if(newTxs.length>0){
-      await db.transactions.bulkAdd(newTxs);
-      TXS.push(...newTxs);
-    }
-    if(data.customCategories&&data.customCategories.length>0){
-      const existCcIds=new Set(CC.map(c=>c.id));
-      const newCc=data.customCategories.filter(c=>!existCcIds.has(c.id));
-      if(newCc.length>0){await db.customCats.bulkAdd(newCc);CC.push(...newCc);}
-    }
-    if(data.budget&&!BUDGET){BUDGET=data.budget;await dbSaveSetting('budget',BUDGET);}
-    if(newSubs.length>0){
-      await db.subscriptions.bulkAdd(newSubs);
-      SUBS.push(...newSubs);
-    }
-    refreshPrevMo();rHome();updCatCnt();if(S.tab==='rep')rSubsc();
-    toast(`✅ 取引${newTxs.length}件・サブスク${newSubs.length}件を追加しました`);
-  }catch(e){toast('⚠️ ファイルの形式が正しくありません');}
-  input.value='';
-}
-function doCsv(){
-  const rows=[['日付','種別','カテゴリ','金額','メモ']];
-  [...TXS].sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{
-    const c=gc(t.category_id);
-    rows.push([t.date,t.type==='income'?'収入':'支出',c.name,t.amount,t.memo||'']);
-  });
-  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
-  a.download=`kakeibo-${todayStr()}.csv`;
-  a.click();
-  toast('📊 CSVを出力しました ✓');
-}
-async function confirmClear(){
-  if(!confirm('全データを削除します。この操作は取り消せません。よろしいですか？'))return;
-  await db.transactions.clear();
-  await db.subscriptions.clear();
-  TXS=[];SUBS=[];refreshPrevMo();rHome();if(S.tab==='cal')rCal();if(S.reportTab==='subsc')rSubsc();
-  toast('🗑 データを削除しました');
-}
-
-// ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
 //  SERVICE WORKER 登録
 // ═══════════════════════════════════════════════════════════

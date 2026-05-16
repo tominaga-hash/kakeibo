@@ -768,7 +768,7 @@ function rHome(){
   // 前月コピーバナー
   const py=prevYM(CUR_YM);
   const [py2,pm2]=py.split('-');
-  document.getElementById('copy-banner-lbl').textContent=`${parseInt(pm2)}月からコピー`;
+  document.getElementById('copy-banner-lbl').textContent='前月からコピー';
   document.getElementById('copy-banner-sub').textContent=`定期支払い${S.prevMoTxs.length}件 — タップして選択`;
   // Donut
   const ctot={};txs.filter(t=>t.type==='expense').forEach(t=>{ctot[t.category_id]=(ctot[t.category_id]||0)+t.amount;});

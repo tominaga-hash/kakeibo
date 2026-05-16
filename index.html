@@ -1273,23 +1273,28 @@ async function loadJson(input){
   try{
     const data=JSON.parse(text);
     if(!data.transactions||!Array.isArray(data.transactions))throw new Error();
-    if(!confirm(`${data.transactions.length}件の取引をインポートします。現在のデータは上書きされます。よろしいですか？`))return;
-    await db.transactions.clear();
-    await db.transactions.bulkAdd(data.transactions);
-    TXS=data.transactions;
-    if(data.customCategories){
-      await db.customCats.clear();
-      await db.customCats.bulkAdd(data.customCategories);
-      CC=data.customCategories;
+    // 既存IDのセットを作成（重複スキップ用）
+    const existIds=new Set(TXS.map(t=>t.id));
+    const newTxs=data.transactions.filter(t=>!existIds.has(t.id));
+    const existSubIds=new Set(SUBS.map(s=>s.id));
+    const newSubs=(data.subscriptions||[]).filter(s=>!existSubIds.has(s.id));
+    if(!confirm(`取引 ${newTxs.length}件・サブスク ${newSubs.length}件を追加します。\n（IDが重複するものはスキップ）`))return;
+    if(newTxs.length>0){
+      await db.transactions.bulkAdd(newTxs);
+      TXS.push(...newTxs);
     }
-    if(data.budget){BUDGET=data.budget;await dbSaveSetting('budget',BUDGET);}
-    if(data.subscriptions&&Array.isArray(data.subscriptions)){
-      await db.subscriptions.clear();
-      await db.subscriptions.bulkAdd(data.subscriptions);
-      SUBS=data.subscriptions;
+    if(data.customCategories&&data.customCategories.length>0){
+      const existCcIds=new Set(CC.map(c=>c.id));
+      const newCc=data.customCategories.filter(c=>!existCcIds.has(c.id));
+      if(newCc.length>0){await db.customCats.bulkAdd(newCc);CC.push(...newCc);}
+    }
+    if(data.budget&&!BUDGET){BUDGET=data.budget;await dbSaveSetting('budget',BUDGET);}
+    if(newSubs.length>0){
+      await db.subscriptions.bulkAdd(newSubs);
+      SUBS.push(...newSubs);
     }
     refreshPrevMo();rHome();updCatCnt();if(S.tab==='rep')rSubsc();
-    toast(`✅ ${TXS.length}件をインポートしました`);
+    toast(`✅ 取引${newTxs.length}件・サブスク${newSubs.length}件を追加しました`);
   }catch(e){toast('⚠️ ファイルの形式が正しくありません');}
   input.value='';
 }

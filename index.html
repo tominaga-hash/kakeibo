@@ -433,6 +433,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <div class="st2">カテゴリ別支出</div>
         <div class="txw" id="cat-rank"></div>
         <div class="card" style="margin-top:11px;"><div style="font-size:13px;font-weight:600;color:#111;margin-bottom:9px;">前月比</div><div id="cmp-body"></div></div>
+        <div class="card" style="margin-top:11px;"><div style="font-size:13px;font-weight:600;color:#111;margin-bottom:9px;">📈 投資・保険</div><div id="inv-body"></div></div>
         <div class="spacer"></div>
       </div>
 
@@ -1040,7 +1041,7 @@ function showMonthPanel(){
     listHTML+=items.map(item=>{
       if(item.kind==='tx')return txHTML(item.data,true,true,true);
       const s=item.data;
-      return `<div class="txi"><span class="txa" style="background:${s.color||'#8b5cf6'}20;color:${s.color||'#8b5cf6'};border-radius:8px;padding:6px 8px;font-size:18px;">${s.icon||'🔄'}</span><div class="txb"><div class="txn">${s.name} <span style="font-size:10px;color:#8b5cf6;background:#f3f0ff;padding:1px 5px;border-radius:4px;">サブスク</span></div><div class="txd">${gc(s.category_id).name}</div></div><div class="txam" style="color:#ef4444;">${fmt(s.amount)}</div></div>`;
+      return `<div class="txi"><div class="txic" style="background:${(s.color||'#8b5cf6')}1a;">${s.icon||'🔄'}</div><div class="txin"><div class="txn">${s.name} <span style="font-size:10px;color:#8b5cf6;background:#f3f0ff;padding:1px 5px;border-radius:4px;">サブスク</span></div><div class="txd">${gc(s.category_id).name}</div></div><div class="txa exp">-${fmt(s.amount)}</div></div>`;
     }).join('');
   });
   document.getElementById('mo-tx-list').innerHTML=listHTML;
@@ -1110,6 +1111,18 @@ function rMonthly(){
   const curE=sE(txs)+subTotal; // サブスク込み
   const prevM=months[months.length-2];
   if(prevM){const prev=sE(mTx(prevM))+subTotal;const diff=curE-prev,sg=diff>=0?'▲':'▼',col=diff>=0?'#ef4444':'#22c55e';document.getElementById('cmp-body').innerHTML=`<div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">今月の支出</span><span style="font-size:14px;font-weight:700;color:#111;">${fmt(curE)}</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">先月の支出</span><span style="font-size:13px;color:#9ca3af;">${fmt(prev)}</span></div><div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #f3f4f6;margin-top:3px;"><span style="font-size:12px;color:#6b7280;">前月比</span><span style="font-size:14px;font-weight:700;color:${col};">${sg} ${fmt(Math.abs(diff))}</span></div>`;}
+  // 投資・保険内訳
+  const insureAmt=txs.filter(t=>t.category_id==='insurance').reduce((a,t)=>a+t.amount,0);
+  const investAmt=txs.filter(t=>t.category_id==='invest').reduce((a,t)=>a+t.amount,0);
+  const invIncAmt=txs.filter(t=>t.category_id==='inv_inc').reduce((a,t)=>a+t.amount,0);
+  const invNet=invIncAmt-(insureAmt+investAmt);
+  const invNetCol=invNet>=0?'#22c55e':'#ef4444';
+  const invNetSign=invNet>=0?'+':'';
+  document.getElementById('inv-body').innerHTML=
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span style="font-size:12px;color:#6b7280;">🛡️ 保険（支出）</span><span style="font-size:14px;font-weight:600;color:#ef4444;">${insureAmt?'-'+fmt(insureAmt):'―'}</span></div>`+
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span style="font-size:12px;color:#6b7280;">📈 株/NISA（積立）</span><span style="font-size:14px;font-weight:600;color:#ef4444;">${investAmt?'-'+fmt(investAmt):'―'}</span></div>`+
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span style="font-size:12px;color:#6b7280;">📊 投資収益</span><span style="font-size:14px;font-weight:600;color:#22c55e;">${invIncAmt?'+'+fmt(invIncAmt):'―'}</span></div>`+
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid #f3f4f6;margin-top:3px;"><span style="font-size:12px;color:#6b7280;">収支</span><span style="font-size:14px;font-weight:700;color:${invNetCol};">${invNetSign}${fmt(invNet)}</span></div>`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1575,16 +1588,6 @@ function showInstallGuide(){
   }else{
     toast('iPhoneのSafariで開き「ホーム画面に追加」でインストールできます');
   }
-}
-
-// ═══════════════════════════════════════════════════════
-//  TOAST / CLOCK
-// ═══════════════════════════════════════════════════════
-let tT;
-function toast(msg){const el=document.getElementById('tk');el.textContent=msg;el.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('on'),2800);}
-function initClock(){
-  function tick(){const n=new Date();document.getElementById('clk').textContent=n.getHours()+':'+String(n.getMinutes()).padStart(2,'0');}
-  tick();setInterval(tick,10000);
 }
 
 // ═══════════════════════════════════════════════════════════

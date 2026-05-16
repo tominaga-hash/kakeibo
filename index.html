@@ -114,7 +114,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .cal-sum-val{font-size:13px;font-weight:700;}
 .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:#EBF5E8;border-bottom:1px solid #c8dfc4;padding:0;}
 #sc-cal{overflow-y:hidden;}#sc-cal.on{display:flex;flex-direction:column;}
-.cal-scroll{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;}
+.cal-scroll{flex:1;min-height:0;overflow-y:scroll;touch-action:pan-y;overscroll-behavior:contain;}
 .cdow{font-size:10px;font-weight:700;color:#4a7a3a;text-align:center;padding:6px 0 5px;letter-spacing:0.02em;}
 .cdow.su{color:#ef4444;}.cdow.sa{color:#3b82f6;}
 .cal-grid{background:#f0f4ee;padding:1px;border-radius:14px;overflow:hidden;border:1px solid #d4e4cf;box-shadow:0 2px 10px rgba(58,112,48,.08);}
@@ -126,12 +126,28 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .cc.sel.tod .cdn{background:#fff;color:#3A7030;box-shadow:none;}
 .cc.emp{cursor:default;background:#f5f7f4;}
 .cc:active{background:#e8f5e5;}
+.txi:active{background:#f0faf0 !important;}
+.sr:active{background:#eff5ef;}
+.nb:active{filter:brightness(.91);}
+.cbtn:active{transform:scale(.93);background:#e4f3e0;}
+.svbtn:active{transform:scale(.97);filter:brightness(.94);}
+.tt:active{opacity:.62;}
+.rtab:active{opacity:.65;}
+.mo-date-hdr:active{background:#dceede;}
 .cdn{font-size:12px;font-weight:700;color:#1a1a1a;width:23px;height:23px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-bottom:2px;flex-shrink:0;}
 .cdn.su{color:#dc2626;}.cdn.sa{color:#2563eb;}.cdn.hol{color:#dc2626;}
 .cdots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;min-height:8px;margin:0 1px;}
 .cdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15);}.sub-dot{border-radius:2px;transform:rotate(45deg);}
 .camnt{font-size:9px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;text-align:center;line-height:1;letter-spacing:-0.02em;}
 .day-panel{margin:0 13px;}
+/* 月次一覧パネル */
+.mo-panel{margin:8px 13px 0;}
+.mo-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:#EBF5E8;border-radius:12px 12px 0 0;border:1px solid #A8D49A;border-bottom:none;}
+.mo-panel-title{font-size:13px;font-weight:700;color:#2E6828;}
+.mo-panel-total{font-size:12px;color:#2E6828;}
+.mo-date-group{}
+.mo-date-hdr{display:flex;align-items:center;justify-content:space-between;padding:5px 12px;background:#f5f5f7;border-bottom:1px solid #eee;font-size:11px;font-weight:700;color:#6b7280;}
+
 .day-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:#EBF5E8;border-radius:12px 12px 0 0;border:1px solid #A8D49A;border-bottom:none;}
 .day-panel-date{font-size:13px;font-weight:700;color:#2E6828;}
 .day-panel-total{font-size:12px;color:#2E6828;}
@@ -375,17 +391,21 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
       <div class="nv">
         <div style="display:flex;align-items:center;gap:14px;">
           <button class="nb sp" style="height:30px;width:30px;font-size:16px;border-radius:50%;padding:0;" onclick="chCalMo(-1)">‹</button>
-          <span style="font-size:17px;font-weight:700;color:#111;flex:1;text-align:center;" id="cal-lbl">---</span>
+          <span style="font-size:17px;font-weight:700;color:#111;flex:1;text-align:center;cursor:pointer;" id="cal-lbl" onclick="showMonthPanel()">---</span>
           <button class="nb sp" style="height:30px;width:30px;font-size:16px;border-radius:50%;padding:0;" onclick="chCalMo(1)">›</button>
         </div>
       </div>
       <div id="cal-sum" style="display:flex;justify-content:space-around;align-items:center;padding:6px 12px;background:linear-gradient(135deg,#EBF5E8,#D8EED4);border-bottom:1px solid #c8dfc4;flex-shrink:0;"></div>
       <div class="cal-dow"><div class="cdow su">日</div><div class="cdow">月</div><div class="cdow">火</div><div class="cdow">水</div><div class="cdow">木</div><div class="cdow">金</div><div class="cdow sa">土</div></div>
-      <div class="cal-scroll">
+      <div class="cal-scroll" id="cal-scroll">
         <div class="cal-grid" id="cal-grid"></div>
         <div id="day-panel" style="margin:8px 13px 0;display:none;">
           <div class="day-panel-hdr"><span id="day-panel-date" class="day-panel-date"></span><span id="day-panel-total" class="day-panel-total"></span><button onclick="openDayInput(S.selDay)" style="background:#3A7030;color:#fff;border:none;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">＋追加</button></div>
           <div class="txw" id="day-tx-list" style="border-radius:0 0 12px 12px;margin:0;border:1px solid #A8D49A;border-top:none;"></div>
+        </div>
+        <div id="month-panel" style="margin:8px 13px 0;display:none;">
+          <div class="mo-panel-hdr"><span class="mo-panel-title" id="mo-panel-title">月の取引一覧</span><span class="mo-panel-total" id="mo-panel-total"></span></div>
+          <div id="mo-tx-list" style="border-radius:0 0 12px 12px;border:1px solid #A8D49A;border-top:none;"></div>
         </div>
         <div class="spacer"></div>
       </div>
@@ -874,13 +894,14 @@ function rHome(){
   document.getElementById('h-txls').innerHTML=[...txs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5).map(t=>txHTML(t,true,true)).join('');
 }
 
-function txHTML(t,withDel,withEdit=true){
+function txHTML(t,withDel,withEdit=true,rowTap=false){
   const c=gc(t.category_id);const s=t.type==='income'?'+':'-',cl=t.type==='income'?'inc':'exp';
   const d=t.date.slice(5).replace('-','/');
-  const del=withDel?`<div class="swdel" ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation();delTx('${t.id}')" onclick="delTx('${t.id}')">削除</div>`:'';
-  const ed=withEdit?`<button class="edit-btn" onclick="editTx('${t.id}')">✏️</button>`:'';
+  const del=withDel?`<div class="swdel" ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation();delTx('${t.id}')" onclick="event.stopPropagation();delTx('${t.id}')">削除</div>`:'';
+  const ed=withEdit&&!rowTap?`<button class="edit-btn" onclick="editTx('${t.id}')">✏️</button>`:'';
   const sw=withDel?`ontouchstart="swS(event,'${t.id}')" ontouchmove="swM(event,'${t.id}')" ontouchend="swE(event,'${t.id}')" id="r-${t.id}"`:'';
-  return`<div class="txi" ${sw}><div class="txic" style="background:${c.color}1a;">${c.icon}</div><div class="txin"><div class="txn">${t.memo||c.name}</div><div class="txd">${d} · ${c.name}</div></div><div class="txa ${cl}">${s}${fmt(t.amount)}</div>${ed}${del}</div>`;
+  const tap=rowTap?`onclick="editTx('${t.id}')" style="cursor:pointer;"`:'';
+  return`<div class="txi" ${tap}${sw}><div class="txic" style="background:${c.color}1a;">${c.icon}</div><div class="txin"><div class="txn">${t.memo||c.name}</div><div class="txd">${d} · ${c.name}</div></div><div class="txa ${cl}">${s}${fmt(t.amount)}</div>${ed}${del}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -932,7 +953,7 @@ function rCal(){
     html+='</div>';
   }
   document.getElementById('cal-grid').innerHTML=html;
-  if(S.selDay)showDayPanel(S.selDay);else document.getElementById('day-panel').style.display='none';
+  if(S.selDay){showDayPanel(S.selDay);document.getElementById('month-panel').style.display='none';}else{document.getElementById('day-panel').style.display='none';showMonthPanel();}
   // ── 月合計サマリーバー ──
   const allTxs=mTx(S.calMonth);
   const totalInc=allTxs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amount,0);
@@ -973,7 +994,47 @@ function openDayInput(d){
   const dateStr=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   openSheet();document.getElementById('d-inp').value=dateStr;
 }
+function showMonthPanel(){
+  S.selDay=null;
+  document.getElementById('day-panel').style.display='none';
+  const [y,m]=S.calMonth.split('-').map(Number);
+  const txs=mTx(S.calMonth).sort((a,b)=>b.date.localeCompare(a.date));
+  const inc=sI(txs),exp=sE(txs),bal=inc-exp;
+  const [cy,cm]=S.calMonth.split('-');
+  document.getElementById('mo-panel-title').textContent=`${parseInt(cm)}月の取引一覧`;
+  document.getElementById('mo-panel-total').textContent=`支出 ${fmt(exp)}${inc?' / 収入 '+fmt(inc):''}`;
+  if(!txs.length){
+    document.getElementById('mo-tx-list').innerHTML='<div style="padding:18px;text-align:center;font-size:12px;color:#9ca3af;">この月の取引はありません</div>';
+    document.getElementById('month-panel').style.display='block';
+    requestAnimationFrame(()=>{const cs=document.getElementById('cal-scroll');const mp=document.getElementById('month-panel');if(cs&&mp)cs.scrollTop=mp.offsetTop-8;});
+    return;
+  }
+  // 日付でグループ化
+  const groups={};
+  txs.forEach(t=>{const d=t.date;if(!groups[d])groups[d]=[];groups[d].push(t);});
+  let listHTML='';
+  Object.keys(groups).sort((a,b)=>b.localeCompare(a)).forEach(date=>{
+    const [,dm,dd]=date.split('-');
+    const dayTxs=groups[date];
+    const dExp=dayTxs.filter(t=>t.type==='expense').reduce((a,t)=>a+t.amount,0);
+    const dInc=dayTxs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amount,0);
+    const dSummary=dExp>0?`支出 ${fmt(dExp)}${dInc?` / 収入 ${fmt(dInc)}`:''}`:dInc>0?`収入 ${fmt(dInc)}`:'';
+    listHTML+=`<div class="mo-date-hdr"><span>${parseInt(dm)}月${parseInt(dd)}日</span><span>${dSummary}</span></div>`;
+    listHTML+=dayTxs.map(t=>txHTML(t,true,true,true)).join('');
+  });
+  document.getElementById('mo-tx-list').innerHTML=listHTML;
+  document.getElementById('month-panel').style.display='block';
+  // カレンダーの日付選択を解除して再描画
+  document.querySelectorAll('.cc.sel').forEach(el=>el.classList.remove('sel'));
+  // 月パネルが見えるようにスクロール
+  requestAnimationFrame(()=>{
+    const cs=document.getElementById('cal-scroll');
+    const mp=document.getElementById('month-panel');
+    if(cs&&mp)cs.scrollTop=mp.offsetTop-8;
+  });
+}
 function showDayPanel(d){
+  document.getElementById('month-panel').style.display='none';
   const [y,m]=S.calMonth.split('-').map(Number);
   const days=new Date(y,m,0).getDate();
   const dateStr=`${S.calMonth}-${String(d).padStart(2,'0')}`;
@@ -1152,7 +1213,7 @@ function editTx(id){
   document.getElementById('c-sec-lbl').textContent='カテゴリ（'+(t.type==='expense'?'支出':'収入')+'）';
   rCatGrid();document.getElementById('input-ov').classList.add('on');
 }
-function closeSheet(){closeNp();document.getElementById('input-ov').classList.remove('on');if(S.tab==='cal'&&S.selDay)showDayPanel(S.selDay);}
+function closeSheet(){closeNp();document.getElementById('input-ov').classList.remove('on');if(S.tab==='cal'){if(S.selDay)showDayPanel(S.selDay);else showMonthPanel();}}
 function ovClose(id){document.getElementById(id).classList.remove('on');}
 function setType(t){
   S.type=t;S.catId=t==='expense'?'food':'salary';
@@ -1515,4 +1576,25 @@ window.addEventListener('load',()=>{
   setTimeout(()=>showLoadErr(),8000);
 });
 </script>
-</
+</替わり時に1回だけリロード（二重リロード防止フラグ付き）
+    let swRefreshing=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(swRefreshing)return;
+      swRefreshing=true;
+      window.location.reload();
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  document.getElementById('d-inp').value=todayStr();
+  initDB();
+  // 8秒タイムアウト：それでもローディングなら再試行ボタンを表示
+  setTimeout(()=>showLoadErr(),8000);
+});
+</script>
+</body>
+</html>

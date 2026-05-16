@@ -617,18 +617,21 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 // ═══════════════════════════════════════════════════════
 //  IndexedDB (Dexie.js)
 // ═══════════════════════════════════════════════════════
-const db = new Dexie('KakeiboApp');
-db.version(1).stores({
-  transactions:   'id, type, date, category_id',
-  customCats:     'id, type',
-  settings:       'key'
-});
-db.version(2).stores({
-  transactions:   'id, type, date, category_id',
-  customCats:     'id, type',
-  settings:       'key',
-  subscriptions:  'id'
-});
+let db;
+try{
+  db=new Dexie('KakeiboApp');
+  db.version(1).stores({
+    transactions:   'id, type, date, category_id',
+    customCats:     'id, type',
+    settings:       'key'
+  });
+  db.version(2).stores({
+    transactions:   'id, type, date, category_id',
+    customCats:     'id, type',
+    settings:       'key',
+    subscriptions:  'id'
+  });
+}catch(e){console.error('Dexie init failed:',e);}
 
 // ═══════════════════════════════════════════════════════
 //  STATIC DATA
@@ -720,6 +723,10 @@ function todayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getM
 //  DB 初期化
 // ═══════════════════════════════════════════════════════
 async function initDB(){
+  if(!db){
+    console.error('DB not available');
+    showLoadErr();return;
+  }
   try{
     // 設定ロード
     const bset=await db.settings.get('budget');
@@ -757,6 +764,11 @@ function refreshPrevMo(){
 
 function hideLoading(){
   document.getElementById('loading-sc').classList.add('hide');
+}
+function showLoadErr(){
+  const sc=document.getElementById('loading-sc');
+  if(!sc||sc.classList.contains('hide'))return;
+  sc.innerHTML='<div class="loading-logo">⚠️</div><div class="loading-title" style="font-size:16px;color:#dc2626;margin-bottom:8px;">読み込みに失敗</div><div class="loading-sub" style="margin:0 24px 20px;text-align:center;line-height:1.5;">ファイルの読み込みに失敗しました。<br>ネットワーク接続を確認して<br>再読み込みしてください。</div><button onclick="window.location.reload()" style="background:#3A7030;color:#fff;border:none;border-radius:12px;padding:10px 28px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-appearance:none;">再読み込み</button>';
 }
 
 // ── DB書き込みヘルパー
@@ -1498,6 +1510,8 @@ if('serviceWorker' in navigator){
 window.addEventListener('load',()=>{
   document.getElementById('d-inp').value=todayStr();
   initDB();
+  // 8秒タイムアウト：それでもローディングなら再試行ボタンを表示
+  setTimeout(()=>showLoadErr(),8000);
 });
 </script>
 </

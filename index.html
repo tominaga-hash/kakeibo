@@ -35,7 +35,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 
 /* ── PWA スタンドアロン (iPhone にインストール後) ── */
 @media (display-mode: standalone) {
-  html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;position:fixed;width:100%;}
   body{background:#F5F2EC;padding:0;display:block;}
   .po{background:none;border-radius:0;padding:0;box-shadow:none;width:100%;height:100%;}
   .ph{width:100%;height:100%;min-height:100dvh;border-radius:0;}
@@ -46,7 +46,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 }
 /* モバイルブラウザでも同様に全画面表示 */
 @media (max-width: 480px) {
-  html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;position:fixed;width:100%;}
   body{background:#F5F2EC;padding:0;display:block;}
   .po{background:none;border-radius:0;padding:0;box-shadow:none;width:100%;height:100%;}
   .ph{width:100%;height:100%;min-height:100dvh;border-radius:0;}
@@ -742,6 +742,8 @@ function sI(txs){return txs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amoun
 let _sLockEl=null,_sLockPos=0,_sLockN=0;
 function lockScroll(){const el=document.querySelector('.sc.on');if(el){if(_sLockN===0){_sLockEl=el;_sLockPos=el.scrollTop;el.style.overflowY='hidden';}  _sLockN++;}}
 function unlockScroll(){if(_sLockN>0){_sLockN--;if(_sLockN===0&&_sLockEl){_sLockEl.style.overflowY='';_sLockEl.scrollTop=_sLockPos;_sLockEl=null;}}}
+// ── iOS input フォーカス時に window scroll をリセット ──
+document.addEventListener('focusin',()=>{requestAnimationFrame(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});});
 function uid(){return'tx'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function todayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 
@@ -1005,29 +1007,41 @@ function showMonthPanel(){
   S.selDay=null;
   document.getElementById('day-panel').style.display='none';
   const [y,m]=S.calMonth.split('-').map(Number);
+  const days=new Date(y,m,0).getDate();
   const txs=mTx(S.calMonth).sort((a,b)=>b.date.localeCompare(a.date));
-  const inc=sI(txs),exp=sE(txs),bal=inc-exp;
+  const subs=SUBS.filter(s=>s.day<=days);
+  const subTotal=subs.reduce((a,s)=>a+s.amount,0);
+  const inc=sI(txs),exp=sE(txs)+subTotal;
   const [cy,cm]=S.calMonth.split('-');
   document.getElementById('mo-panel-title').textContent=`${parseInt(cm)}月の取引一覧`;
   document.getElementById('mo-panel-total').textContent=`支出 ${fmt(exp)}${inc?' / 収入 '+fmt(inc):''}`;
-  if(!txs.length){
+  if(!txs.length&&!subs.length){
     document.getElementById('mo-tx-list').innerHTML='<div style="padding:18px;text-align:center;font-size:12px;color:#9ca3af;">この月の取引はありません</div>';
     document.getElementById('month-panel').style.display='block';
     requestAnimationFrame(()=>{const cs=document.getElementById('cal-scroll');const mp=document.getElementById('month-panel');if(cs&&mp)cs.scrollTop=mp.offsetTop-8;});
     return;
   }
-  // 日付でグループ化
+  // 日付でグループ化（取引＋サブスク）
   const groups={};
-  txs.forEach(t=>{const d=t.date;if(!groups[d])groups[d]=[];groups[d].push(t);});
+  txs.forEach(t=>{const d=t.date;if(!groups[d])groups[d]=[];groups[d].push({kind:'tx',data:t});});
+  subs.forEach(s=>{
+    const dateKey=`${S.calMonth}-${String(s.day).padStart(2,'0')}`;
+    if(!groups[dateKey])groups[dateKey]=[];
+    groups[dateKey].push({kind:'sub',data:s});
+  });
   let listHTML='';
   Object.keys(groups).sort((a,b)=>b.localeCompare(a)).forEach(date=>{
     const [,dm,dd]=date.split('-');
-    const dayTxs=groups[date];
-    const dExp=dayTxs.filter(t=>t.type==='expense').reduce((a,t)=>a+t.amount,0);
-    const dInc=dayTxs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amount,0);
+    const items=groups[date];
+    const dExp=items.reduce((a,item)=>item.kind==='tx'&&item.data.type==='expense'?a+item.data.amount:item.kind==='sub'?a+item.data.amount:a,0);
+    const dInc=items.reduce((a,item)=>item.kind==='tx'&&item.data.type==='income'?a+item.data.amount:a,0);
     const dSummary=dExp>0?`支出 ${fmt(dExp)}${dInc?` / 収入 ${fmt(dInc)}`:''}`:dInc>0?`収入 ${fmt(dInc)}`:'';
     listHTML+=`<div class="mo-date-hdr"><span>${parseInt(dm)}月${parseInt(dd)}日</span><span>${dSummary}</span></div>`;
-    listHTML+=dayTxs.map(t=>txHTML(t,true,true,true)).join('');
+    listHTML+=items.map(item=>{
+      if(item.kind==='tx')return txHTML(item.data,true,true,true);
+      const s=item.data;
+      return `<div class="txi"><span class="txa" style="background:${s.color||'#8b5cf6'}20;color:${s.color||'#8b5cf6'};border-radius:8px;padding:6px 8px;font-size:18px;">${s.icon||'🔄'}</span><div class="txb"><div class="txn">${s.name} <span style="font-size:10px;color:#8b5cf6;background:#f3f0ff;padding:1px 5px;border-radius:4px;">サブスク</span></div><div class="txd">${gc(s.category_id).name}</div></div><div class="txam" style="color:#ef4444;">${fmt(s.amount)}</div></div>`;
+    }).join('');
   });
   document.getElementById('mo-tx-list').innerHTML=listHTML;
   document.getElementById('month-panel').style.display='block';
@@ -1573,23 +1587,23 @@ function initClock(){
   tick();setInterval(tick,10000);
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
 //  SERVICE WORKER 登録
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})
-      .catch(err=>console.warn('SW registration failed:',err));
-    // SW切り替わり時に1回だけリロード（二重リロード防止フラグ付き）
-    let swRefreshing=false;
-    navigator.serviceWorker.addEventListener('controllerchange',()=>{
-      if(swRefreshing)return;
-      swRefreshing=true;
-      window.location.reload();
-        });
+  let swRefreshing=false;
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    reg.addEventListener('updatefound',()=>{
+      const w=reg.installing;
+      w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)w.postMessage({action:'skipWaiting'});});
+    });
+  }).catch(e=>console.warn('SW:',e));
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(swRefreshing)return;
+    swRefreshing=true;
+    window.location.reload();
   });
 }
-
 // INIT
 window.addEventListener('load',()=>{
   document.getElementById('app').style.display='block';

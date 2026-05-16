@@ -1398,8 +1398,22 @@ function initClock(){
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})
-      .then(reg=>console.log('SW registered:',reg.scope))
+      .then(reg=>{
+        // 新バージョン検出時：インストール完了後に自動リロード
+        reg.addEventListener('updatefound',()=>{
+          const nw=reg.installing;
+          nw.addEventListener('statechange',()=>{
+            if(nw.state==='installed'&&navigator.serviceWorker.controller){
+              window.location.reload();
+            }
+          });
+        });
+      })
       .catch(err=>console.warn('SW registration failed:',err));
+    // SW切り替わり時にもリロード（二重保険）
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      window.location.reload();
+    });
   });
 }
 

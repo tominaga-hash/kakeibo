@@ -121,7 +121,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .cdn{font-size:12px;font-weight:600;color:#111;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-bottom:2px;}
 .cdn.su{color:#ef4444;}.cdn.sa{color:#3b82f6;}
 .cdots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;min-height:7px;}
-.cdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.cdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}.sub-dot{border-radius:2px;transform:rotate(45deg);}
 .camnt{font-size:9px;font-variant-numeric:tabular-nums;margin-top:1px;text-align:center;line-height:1;}
 .day-panel{margin:0 13px;}
 .day-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:#EBF5E8;border-radius:12px 12px 0 0;border:1px solid #A8D49A;border-bottom:none;}
@@ -357,7 +357,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
       </div>
       <div class="cpbn" onclick="openCpModal()">
         <span style="font-size:22px;">📋</span>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#0284c7;" id="copy-banner-lbl">先月からコピー</div><div style="font-size:11px;color:#9ca3af;margin-top:1px;" id="copy-banner-sub">定期支払いをまとめてコピー</div></div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#0284c7;" id="copy-banner-lbl">繰り返しコピーする</div><div style="font-size:11px;color:#9ca3af;margin-top:1px;" id="copy-banner-sub">定期支払いをまとめてコピー</div></div>
         <span style="color:#93c5fd;font-size:18px;">›</span>
       </div>
       <div class="card" style="padding:13px;"><div style="font-size:13px;font-weight:600;color:#111;margin-bottom:9px;">カテゴリ別支出</div><div style="display:flex;align-items:center;gap:12px;"><div style="width:90px;height:90px;flex-shrink:0;"><canvas id="donut" width="90" height="90"></canvas></div><div id="dleg" style="flex:1;"></div></div></div>
@@ -555,8 +555,13 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
     <div class="cpo" id="cp-ov" onclick="cpOvClose(event)">
       <div class="cpsh" onclick="event.stopPropagation()">
         <div class="shdl"></div>
-        <div class="shh"><div class="sht" id="cp-title">先月からコピー</div><button class="shc" onclick="closeCpModal()">×</button></div>
-        <div style="padding:0 13px 10px;font-size:11px;color:#9ca3af;" id="cp-sub">チェックした取引を今月の同じ日にコピーします。</div>
+        <div class="shh"><div class="sht">繰り返しコピーする</div><button class="shc" onclick="closeCpModal()">×</button></div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:6px 13px 4px;">
+          <button onclick="chCpMo(-1)" style="background:none;border:1px solid #e5e7eb;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
+          <span id="cp-mo-lbl" style="font-size:14px;font-weight:600;color:#111;min-width:90px;text-align:center;"></span>
+          <button onclick="chCpMo(1)" style="background:none;border:1px solid #e5e7eb;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>
+        </div>
+        <div style="padding:2px 13px 8px;font-size:11px;color:#9ca3af;text-align:center;" id="cp-sub">チェックした取引を今月の同じ日にコピーします。</div>
         <div class="cpls" id="cp-list"></div>
         <div class="cpft"><button class="cpeb" id="cp-btn" onclick="execCopy()" disabled>コピーする（<span id="cp-cnt">0</span>件）</button></div>
       </div>
@@ -649,7 +654,7 @@ var S={
   mOff:0, calMonth:CUR_YM, selDay:null,
   reportTab:'monthly', editingId:null,
   cpSel:new Set(), newCatColor:COLORS[0], newCatType:'expense',
-  charts:{}, prevMoTxs:[]
+  charts:{}, prevMoTxs:[], cpMonth:'', cpSrcTxs:[]
 };
 
 // ── Helpers
@@ -798,7 +803,7 @@ function rHome(){
   // 前月コピーバナー
   const py=prevYM(CUR_YM);
   const [py2,pm2]=py.split('-');
-  document.getElementById('copy-banner-lbl').textContent='前月からコピー';
+  document.getElementById('copy-banner-lbl').textContent='繰り返しコピーする';
   document.getElementById('copy-banner-sub').textContent=`定期支払い${S.prevMoTxs.length}件 — タップして選択`;
   // Donut
   const ctot={};txs.filter(t=>t.type==='expense').forEach(t=>{ctot[t.category_id]=(ctot[t.category_id]||0)+t.amount;});
@@ -836,6 +841,9 @@ function rCal(){
   const days=new Date(y,m,0).getDate();
   const txByDay={};
   mTx(S.calMonth).forEach(t=>{const d=parseInt(t.date.slice(8));if(!txByDay[d])txByDay[d]=[];txByDay[d].push(t);});
+  // サブスクを引き落とし日でグループ化
+  const subByDay={};
+  SUBS.forEach(s=>{const d=s.day;if(d>=1&&d<=days){if(!subByDay[d])subByDay[d]=[];subByDay[d].push(s);}});
   const todayD=new Date();const isThisMonth=(todayD.getFullYear()===y&&todayD.getMonth()+1===m);
   let html='',day=1;
   const rows=Math.ceil((first+days)/7);
@@ -846,13 +854,18 @@ function rCal(){
       if(idx<first||day>days){html+='<div class="cc emp"></div>';}
       else{
         const txs=txByDay[day]||[];
+        const subs=subByDay[day]||[];
         const exp=txs.filter(t=>t.type==='expense').reduce((a,t)=>a+t.amount,0);
         const inc=txs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amount,0);
+        const subExp=subs.reduce((a,s)=>a+s.amount,0);
         const isSel=S.selDay===day,isToday=isThisMonth&&day===todayD.getDate();
-        const cats=[...new Set(txs.map(t=>t.category_id))].slice(0,3);
-        const dots=cats.map(cid=>`<div class="cdot" style="background:${gc(cid).color};"></div>`).join('');
-        const amtStr=exp>0?`-${Math.round(exp/1000)}k`:inc>0?`+${Math.round(inc/1000)}k`:'';
-        const amtCol=exp>0?'#ef4444':'#22c55e';
+        const cats=[...new Set(txs.map(t=>t.category_id))].slice(0,2);
+        const txDots=cats.map(cid=>`<div class="cdot" style="background:${gc(cid).color};"></div>`).join('');
+        const subDots=subs.slice(0,3-cats.length).map(s=>`<div class="cdot sub-dot" style="background:${s.color||'#8b5cf6'};"></div>`).join('');
+        const dots=txDots+subDots;
+        const totalExp=exp+subExp;
+        const amtStr=totalExp>0?`-${Math.round(totalExp/1000)}k`:inc>0?`+${Math.round(inc/1000)}k`:'';
+        const amtCol=totalExp>0?'#ef4444':'#22c55e';
         html+=`<div class="cc ${isSel?'sel':''} ${isToday?'tod':''}" onclick="selDay(${day})"><span class="cdn ${c===0?'su':c===6?'sa':''}">${day}</span><div class="cdots">${dots}</div>${amtStr?`<div class="camnt" style="color:${amtCol};">${amtStr}</div>`:''}</div>`;
         day++;
       }
@@ -871,31 +884,35 @@ function selDay(d){
 }
 function showDayPanel(d){
   const [y,m]=S.calMonth.split('-').map(Number);
+  const days=new Date(y,m,0).getDate();
   const dateStr=`${S.calMonth}-${String(d).padStart(2,'0')}`;
   const txs=TXS.filter(t=>t.date===dateStr).sort((a,b)=>a.type.localeCompare(b.type));
+  const subs=SUBS.filter(s=>s.day===d&&d<=days);
   const exp=sE(txs),inc=sI(txs);
+  const subExp=subs.reduce((a,s)=>a+s.amount,0);
+  const totalExp=exp+subExp;
   document.getElementById('day-panel-date').textContent=`${m}月${d}日`;
-  document.getElementById('day-panel-total').textContent=txs.length?`支出 ${fmt(exp)}${inc?' / 収入 '+fmt(inc):''}`:txs.length+' 件';
+  document.getElementById('day-panel-total').textContent=totalExp>0?`支出 ${fmt(totalExp)}${inc?' / 収入 '+fmt(inc):''}`:inc>0?`収入 ${fmt(inc)}`:'0件';
   document.getElementById('day-panel').style.display='block';
-  document.getElementById('day-tx-list').innerHTML=txs.length?txs.map(t=>txHTML(t,true,true)).join(''):'<div class="no-tx">この日の取引はありません</div>';
+  const subHTML=subs.map(s=>`<div class="txi"><span class="txa" style="background:${s.color||'#8b5cf6'}20;color:${s.color||'#8b5cf6'};border-radius:8px;padding:6px 8px;font-size:18px;">${s.icon||'🔄'}</span><div class="txb"><div class="txn">${s.name} <span style="font-size:10px;color:#8b5cf6;background:#f3f0ff;padding:1px 5px;border-radius:4px;">サブスク</span></div><div class="txd">${gc(s.category_id).name}</div></div><div class="txam" style="color:#ef4444;">${fmt(s.amount)}</div></div>`).join('');
+  document.getElementById('day-tx-list').innerHTML=(txs.length?txs.map(t=>txHTML(t,true,true)).join(''):'')+(subHTML||(!txs.length?'<div class="no-tx">この日の取引はありません</div>':''));
 }
 
 // ═══════════════════════════════════════════════════════
 //  REPORT — Monthly
 // ═══════════════════════════════════════════════════════
 function chMo(d){
-  if(d<0)S.mOff=Math.max(-11,S.mOff-1);
-  else S.mOff=Math.min(0,S.mOff+1);
+  if(d<0)S.mOff=Math.max(-23,S.mOff-1);
+  else S.mOff=Math.min(12,S.mOff+1);
   rMonthly();
 }
 function getReportMonths(){
-  // 直近4ヶ月 (S.mOff=0 が今月)
-  const months=[];
-  for(let i=3;i>=0;i--){
-    let ym=CUR_YM;
-    for(let j=0;j<i-S.mOff;j++)ym=prevYM(ym);
-    months.push(ym);
-  }
+  // S.mOff: 0=今月, -1=先月, +1=来月
+  let base=CUR_YM;
+  if(S.mOff>0){for(let i=0;i<S.mOff;i++)base=nextYM(base);}
+  else if(S.mOff<0){for(let i=0;i<-S.mOff;i++)base=prevYM(base);}
+  const months=[base];
+  for(let i=1;i<4;i++)months.unshift(prevYM(months[0]));
   return months;
 }
 function rMonthly(){
@@ -908,7 +925,7 @@ function rMonthly(){
   const lbls=months.map(ym=>{const [,mm]=ym.split('-');return parseInt(mm)+'月';});
   if(S.charts.b)S.charts.b.destroy();
   const bc=document.getElementById('barChart');
-  if(bc)S.charts.b=new Chart(bc.getContext('2d'),{type:'bar',data:{labels:lbls,datasets:[{label:'収入',data:incD,backgroundColor:'rgba(74,130,60,.7)',borderRadius:4},{label:'支出',data:expD,backgroundColor:'rgba(192,104,74,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>(v/10000)+'万',font:{size:8}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}});
+  if(bc)S.charts.b=new Chart(bc.getContext('2d'),{type:'bar',data:{labels:lbls,datasets:[{label:'収入',data:incD,backgroundColor:'rgba(74,130,60,.7)',borderRadius:4},{label:'支出',data:expD,backgroundColor:'rgba(192,104,74,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>v===0?'0':(Math.round(v/1000)/10)+'万',font:{size:8}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}});
   const txs=mTx(curYM);
   const ctot={};txs.filter(t=>t.type==='expense').forEach(t=>{ctot[t.category_id]=(ctot[t.category_id]||0)+t.amount;});
   const ents=Object.entries(ctot).sort((a,b)=>b[1]-a[1]);const mx=ents[0]?.[1]||1;
@@ -940,7 +957,7 @@ function rAnnual(){
   document.getElementById('an-sbar').style.width=Math.max(0,rate)+'%';
   if(S.charts.a)S.charts.a.destroy();
   const ac2=document.getElementById('annualChart');
-  if(ac2)S.charts.a=new Chart(ac2.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'収入',data:incArr,backgroundColor:'rgba(74,130,60,.6)',borderRadius:3},{label:'支出',data:expArr,backgroundColor:'rgba(192,104,74,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>c.raw?(' '+fmt(c.raw)):' —'}}},scales:{y:{ticks:{callback:v=>v?(v/10000)+'万':'',font:{size:8}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:8}},grid:{display:false}}}}});
+  if(ac2)S.charts.a=new Chart(ac2.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'収入',data:incArr,backgroundColor:'rgba(74,130,60,.6)',borderRadius:3},{label:'支出',data:expArr,backgroundColor:'rgba(192,104,74,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>c.raw?(' '+fmt(c.raw)):' —'}}},scales:{y:{ticks:{callback:v=>v?(Math.round(v/1000)/10)+'万':'',font:{size:8}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:8}},grid:{display:false}}}}});
   // Table: months with data
   const curMo=parseInt(CUR_YM.split('-')[1]);
   let tblHtml='';
@@ -1136,25 +1153,35 @@ async function saveTx(){
 //  COPY FROM PREV MONTH
 // ═══════════════════════════════════════════════════════
 function openCpModal(){
-  const py=prevYM(CUR_YM);
-  const [,pm]=py.split('-');
-  const [,cm]=CUR_YM.split('-');
-  document.getElementById('cp-title').textContent=`${parseInt(pm)}月からコピー`;
-  document.getElementById('cp-sub').textContent=`チェックした取引を${parseInt(cm)}月の同じ日にコピーします。`;
+  S.cpMonth=prevYM(CUR_YM);
   S.cpSel=new Set();
-  document.getElementById('cp-list').innerHTML=S.prevMoTxs.map(t=>{
+  rCpModal();
+  document.getElementById('cp-ov').classList.add('on');
+}
+function chCpMo(d){
+  S.cpMonth=d<0?prevYM(S.cpMonth):nextYM(S.cpMonth);
+  S.cpSel=new Set();
+  rCpModal();
+}
+function rCpModal(){
+  const [py,pm]=S.cpMonth.split('-');
+  const [,cm]=CUR_YM.split('-');
+  document.getElementById('cp-mo-lbl').textContent=`${py}年${parseInt(pm)}月`;
+  document.getElementById('cp-sub').textContent=`チェックした取引を${parseInt(cm)}月の同じ日にコピーします。`;
+  S.cpSrcTxs=TXS.filter(t=>t.date.startsWith(S.cpMonth));
+  document.getElementById('cp-list').innerHTML=S.cpSrcTxs.map(t=>{
     const c=gc(t.category_id);const day=parseInt(t.date.slice(8));
     const s=t.type==='income'?'+':'-';const col=t.type==='income'?'#22c55e':'#ef4444';
     return`<div class="cpit" onclick="togCp('${t.id}')"><div class="cpck" id="ck-${t.id}"></div><div class="cpii" style="background:${c.color}1a;">${c.icon}</div><div class="cpin"><div class="cpnm">${t.memo||c.name}</div><div class="cpsb">${c.name} · ${parseInt(pm)}月${day}日 → <strong style="color:#0284c7;">${parseInt(cm)}月${day}日</strong></div></div><div style="font-size:13px;font-weight:700;color:${col};white-space:nowrap;">${s}${fmt(t.amount)}</div></div>`;
-  }).join('')||'<div style="padding:18px;text-align:center;font-size:12px;color:#9ca3af;">先月の取引がありません</div>';
-  updCpBtn();document.getElementById('cp-ov').classList.add('on');
+  }).join('')||'<div style="padding:18px;text-align:center;font-size:12px;color:#9ca3af;">この月の取引がありません</div>';
+  updCpBtn();
 }
 function togCp(id){const ck=document.getElementById('ck-'+id);if(S.cpSel.has(id)){S.cpSel.delete(id);ck.classList.remove('on');ck.innerHTML='';}else{S.cpSel.add(id);ck.classList.add('on');ck.innerHTML='<svg width="12" height="10" viewBox="0 0 12 10"><path d="M1 5L4.5 8.5L11 1.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';}updCpBtn();}
 function updCpBtn(){const n=S.cpSel.size;document.getElementById('cp-cnt').textContent=n;document.getElementById('cp-btn').disabled=(n===0);}
 async function execCopy(){
   const n=S.cpSel.size;if(!n)return;
   const [,cm]=CUR_YM.split('-');
-  const newTxs=S.prevMoTxs.filter(t=>S.cpSel.has(t.id)).map(t=>({
+  const newTxs=S.cpSrcTxs.filter(t=>S.cpSel.has(t.id)).map(t=>({
     id:uid(),type:t.type,amount:t.amount,category_id:t.category_id,
     date:CUR_YM+'-'+t.date.slice(8),memo:t.memo
   }));

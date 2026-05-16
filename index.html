@@ -924,19 +924,23 @@ function rMonthly(){
   const curYM=months[months.length-1];
   const [y,m]=curYM.split('-');
   document.getElementById('r-mo-lbl').textContent=`${y}年${parseInt(m)}月`;
-  const expD=months.map(ym=>sE(mTx(ym)));
+  const subTotal=SUBS.reduce((a,s)=>a+s.amount,0); // 月次サブスク合計
+  const expD=months.map(ym=>sE(mTx(ym))+subTotal);  // 取引+サブスク
   const incD=months.map(ym=>sI(mTx(ym)));
   const lbls=months.map(ym=>{const [,mm]=ym.split('-');return parseInt(mm)+'月';});
   if(S.charts.b)S.charts.b.destroy();
   const bc=document.getElementById('barChart');
   if(bc)S.charts.b=new Chart(bc.getContext('2d'),{type:'bar',data:{labels:lbls,datasets:[{label:'収入',data:incD,backgroundColor:'rgba(74,130,60,.7)',borderRadius:4},{label:'支出',data:expD,backgroundColor:'rgba(192,104,74,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>v===0?'0':(Math.round(v/1000)/10)+'万',font:{size:8}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}});
   const txs=mTx(curYM);
-  const ctot={};txs.filter(t=>t.type==='expense').forEach(t=>{ctot[t.category_id]=(ctot[t.category_id]||0)+t.amount;});
+  // カテゴリ別：取引+サブスクを合算
+  const ctot={};
+  txs.filter(t=>t.type==='expense').forEach(t=>{ctot[t.category_id]=(ctot[t.category_id]||0)+t.amount;});
+  SUBS.forEach(s=>{ctot[s.category_id]=(ctot[s.category_id]||0)+s.amount;});
   const ents=Object.entries(ctot).sort((a,b)=>b[1]-a[1]);const mx=ents[0]?.[1]||1;
   document.getElementById('cat-rank').innerHTML=ents.map(([id,v],i)=>{const c=gc(id);const p=Math.round(v/mx*100);return`<div class="rank-item"><span style="font-size:11px;color:#9ca3af;width:13px;text-align:center;">${i+1}</span><span style="font-size:15px;width:20px;">${c.icon}</span><span style="font-size:11px;color:#111;width:46px;flex-shrink:0;">${c.name}</span><div class="rbw"><div class="rb" style="width:${p}%;background:${c.color};"></div></div><span class="ra">${fmt(v)}</span></div>`;}).join('')||'<div style="text-align:center;padding:18px;font-size:12px;color:#9ca3af;">データなし</div>';
-  const curE=sE(txs);
+  const curE=sE(txs)+subTotal; // サブスク込み
   const prevM=months[months.length-2];
-  if(prevM){const prev=sE(mTx(prevM));const diff=curE-prev,sg=diff>=0?'▲':'▼',col=diff>=0?'#ef4444':'#22c55e';document.getElementById('cmp-body').innerHTML=`<div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">今月の支出</span><span style="font-size:14px;font-weight:700;color:#111;">${fmt(curE)}</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">先月の支出</span><span style="font-size:13px;color:#9ca3af;">${fmt(prev)}</span></div><div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #f3f4f6;margin-top:3px;"><span style="font-size:12px;color:#6b7280;">前月比</span><span style="font-size:14px;font-weight:700;color:${col};">${sg} ${fmt(Math.abs(diff))}</span></div>`;}
+  if(prevM){const prev=sE(mTx(prevM))+subTotal;const diff=curE-prev,sg=diff>=0?'▲':'▼',col=diff>=0?'#ef4444':'#22c55e';document.getElementById('cmp-body').innerHTML=`<div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">今月の支出</span><span style="font-size:14px;font-weight:700;color:#111;">${fmt(curE)}</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">先月の支出</span><span style="font-size:13px;color:#9ca3af;">${fmt(prev)}</span></div><div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #f3f4f6;margin-top:3px;"><span style="font-size:12px;color:#6b7280;">前月比</span><span style="font-size:14px;font-weight:700;color:${col};">${sg} ${fmt(Math.abs(diff))}</span></div>`;}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1259,7 +1263,7 @@ function doExp(){
   const data=JSON.stringify({version:'1.0',exportedAt:new Date().toISOString(),budget:BUDGET,customCategories:CC,subscriptions:SUBS,transactions:TXS},null,2);
   const a=document.createElement('a');
   a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
-  a.download=`kakeibo-backup-${todayStr()}.json`;
+  a.download='kakeibo-backup.json';
   a.click();
   toast('📦 JSONバックアップを出力しました ✓');
 }

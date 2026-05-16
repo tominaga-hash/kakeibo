@@ -112,22 +112,25 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .cal-sum-item{display:flex;flex-direction:column;align-items:center;gap:1px;}
 .cal-sum-lbl{font-size:9px;color:#9ca3af;font-weight:500;letter-spacing:0.03em;}
 .cal-sum-val{font-size:13px;font-weight:700;}
-.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:#fff;border-bottom:1px solid #f0f0f0;padding:0 8px;}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:#EBF5E8;border-bottom:1px solid #c8dfc4;padding:0;}
 #sc-cal{overflow-y:hidden;display:flex;flex-direction:column;}
 .cal-scroll{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;}
-.cdow{text-align:center;font-size:10px;font-weight:600;color:#9ca3af;padding:6px 0;}
+.cdow{font-size:10px;font-weight:700;color:#4a7a3a;text-align:center;padding:6px 0 5px;letter-spacing:0.02em;}
 .cdow.su{color:#ef4444;}.cdow.sa{color:#3b82f6;}
-.cal-grid{background:#fff;padding:0;border-left:1px solid #e5e7eb;border-top:1px solid #e5e7eb;}
-.cal-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px;}
-.cc{min-height:52px;border-radius:0;padding:4px 2px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:background .1s;border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;}
-.cc.sel{background:#EBF5E8;border-color:#5A9A50;}
-.cc.tod .cdn{background:#3A7030;color:#fff;border-radius:50%;}
-.cc.emp{cursor:default;}
-.cdn{font-size:12px;font-weight:600;color:#111;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-bottom:2px;}
-.cdn.su{color:#ef4444;}.cdn.sa{color:#3b82f6;}.cdn.hol{color:#ef4444;}
-.cdots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;min-height:7px;}
-.cdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}.sub-dot{border-radius:2px;transform:rotate(45deg);}
-.camnt{font-size:9px;font-variant-numeric:tabular-nums;margin-top:1px;text-align:center;line-height:1;}
+.cal-grid{background:#f0f4ee;padding:1px;border-radius:14px;overflow:hidden;border:1px solid #d4e4cf;box-shadow:0 2px 10px rgba(58,112,48,.08);}
+.cal-row{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
+.cc{min-height:56px;padding:5px 2px 4px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:all .15s;background:#fff;position:relative;}
+.cc.wkend{background:#fdf8f8;}
+.cc.sel{background:#dcefda !important;outline:2px solid #5A9A50;outline-offset:-1px;z-index:1;border-radius:4px;}
+.cc.tod .cdn{background:#3A7030;color:#fff;border-radius:50%;box-shadow:0 2px 6px rgba(58,112,48,.45);}
+.cc.sel.tod .cdn{background:#fff;color:#3A7030;box-shadow:none;}
+.cc.emp{cursor:default;background:#f5f7f4;}
+.cc:active{background:#e8f5e5;}
+.cdn{font-size:12px;font-weight:700;color:#1a1a1a;width:23px;height:23px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-bottom:2px;flex-shrink:0;}
+.cdn.su{color:#dc2626;}.cdn.sa{color:#2563eb;}.cdn.hol{color:#dc2626;}
+.cdots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;min-height:8px;margin:0 1px;}
+.cdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15);}.sub-dot{border-radius:2px;transform:rotate(45deg);}
+.camnt{font-size:9px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;text-align:center;line-height:1;letter-spacing:-0.02em;}
 .day-panel{margin:0 13px;}
 .day-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:#EBF5E8;border-radius:12px 12px 0 0;border:1px solid #A8D49A;border-bottom:none;}
 .day-panel-date{font-size:13px;font-weight:700;color:#2E6828;}
@@ -376,12 +379,12 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
           <button class="nb sp" style="height:30px;width:30px;font-size:16px;border-radius:50%;padding:0;" onclick="chCalMo(1)">›</button>
         </div>
       </div>
-      <div id="cal-sum" style="display:flex;justify-content:space-around;align-items:center;padding:5px 12px 5px;background:#fafaf8;border-bottom:1px solid #e8e4dc;flex-shrink:0;"></div>
+      <div id="cal-sum" style="display:flex;justify-content:space-around;align-items:center;padding:6px 12px;background:linear-gradient(135deg,#EBF5E8,#D8EED4);border-bottom:1px solid #c8dfc4;flex-shrink:0;"></div>
       <div class="cal-dow"><div class="cdow su">日</div><div class="cdow">月</div><div class="cdow">火</div><div class="cdow">水</div><div class="cdow">木</div><div class="cdow">金</div><div class="cdow sa">土</div></div>
       <div class="cal-scroll">
         <div class="cal-grid" id="cal-grid"></div>
         <div id="day-panel" style="margin:8px 13px 0;display:none;">
-          <div class="day-panel-hdr"><span id="day-panel-date" class="day-panel-date"></span><span id="day-panel-total" class="day-panel-total"></span></div>
+          <div class="day-panel-hdr"><span id="day-panel-date" class="day-panel-date"></span><span id="day-panel-total" class="day-panel-total"></span><button onclick="openDayInput(S.selDay)" style="background:#3A7030;color:#fff;border:none;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">＋追加</button></div>
           <div class="txw" id="day-tx-list" style="border-radius:0 0 12px 12px;margin:0;border:1px solid #A8D49A;border-top:none;"></div>
         </div>
         <div class="spacer"></div>
@@ -849,10 +852,10 @@ function rHome(){
   // Donut
   const ctot={};txs.filter(t=>t.type==='expense').forEach(t=>{ctot[t.category_id]=(ctot[t.category_id]||0)+t.amount;});
   const ents=Object.entries(ctot).sort((a,b)=>b[1]-a[1]);
-  if(S.charts.d)S.charts.d.destroy();
+  try{if(S.charts.d)S.charts.d.destroy();}catch(e){}
   const canvas=document.getElementById('donut');
-  if(canvas){
-    S.charts.d=new Chart(canvas.getContext('2d'),{type:'doughnut',data:{labels:ents.map(([id])=>gc(id).name),datasets:[{data:ents.map(([,v])=>v),backgroundColor:ents.map(([id])=>gc(id).color),borderWidth:0,hoverOffset:3}]},options:{responsive:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},cutout:'65%'}});
+  if(canvas&&typeof Chart!=='undefined'){
+    try{S.charts.d=new Chart(canvas.getContext('2d'),{type:'doughnut',data:{labels:ents.map(([id])=>gc(id).name),datasets:[{data:ents.map(([,v])=>v),backgroundColor:ents.map(([id])=>gc(id).color),borderWidth:0,hoverOffset:3}]},options:{responsive:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},cutout:'65%'}});}catch(e){console.warn('donut chart:',e.message);}
   }
   document.getElementById('dleg').innerHTML=ents.slice(0,4).map(([id,v])=>{const c=gc(id);return`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;"><div style="width:7px;height:7px;border-radius:50%;background:${c.color};flex-shrink:0;"></div><span style="font-size:10px;color:#6b7280;flex:1;">${c.name}</span><span style="font-size:10px;font-weight:600;color:#111;">${fmt(v)}</span></div>`;}).join('');
   document.getElementById('h-txls').innerHTML=[...txs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5).map(t=>txHTML(t,true,true)).join('');
@@ -909,7 +912,7 @@ function rCal(){
         const amtCol=totalExp>0?'#ef4444':'#22c55e';
         const dateKey=`${String(y).padStart(4,'0')}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         const isHol=HOLIDAYS.has(dateKey);
-        html+=`<div class="cc ${isSel?'sel':''} ${isToday?'tod':''}" onclick="selDay(${day})"><span class="cdn ${c===0||isHol?'su':c===6?'sa':''}">${day}</span><div class="cdots">${dots}</div>${amtStr?`<div class="camnt" style="color:${amtCol};">${amtStr}</div>`:''}</div>`;
+        const isWkend=(c===0||c===6);html+=`<div class="cc ${isSel?'sel':''} ${isToday?'tod':''} ${isWkend?'wkend':''}" onclick="selDay(${day})"><span class="cdn ${c===0||isHol?'su':c===6?'sa':''}">${day}</span><div class="cdots">${dots}</div>${amtStr?`<div class="camnt" style="color:${amtCol};">${amtStr}</div>`:''}</div>`;
         day++;
       }
     }
@@ -932,12 +935,30 @@ function rCal(){
     <div style="width:1px;height:28px;background:#e5e7eb;"></div>
     <div class="cal-sum-item"><div class="cal-sum-lbl">収支</div><div class="cal-sum-val" style="color:${balCol};">${bal>=0?'+':''}${fmt(bal)}</div></div>`;
 }
+let _calTapTimer=null,_calTapDay=null;
 function selDay(d){
-  S.selDay=d;
+  if(_calTapTimer&&_calTapDay===d){
+    // ダブルタップ → 入力シートを開く
+    clearTimeout(_calTapTimer);_calTapTimer=null;_calTapDay=null;
+    S.selDay=d;rCal();
+    const [y,m]=S.calMonth.split('-').map(Number);
+    const dateStr=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    openSheet();
+    document.getElementById('d-inp').value=dateStr;
+  }else{
+    // シングルタップ → 一覧パネル表示
+    clearTimeout(_calTapTimer);_calTapDay=d;
+    _calTapTimer=setTimeout(()=>{
+      _calTapTimer=null;_calTapDay=null;
+      S.selDay=d;rCal();showDayPanel(d);
+    },280);
+  }
+}
+function openDayInput(d){
+  // 日別パネルの「＋追加」ボタン用
   const [y,m]=S.calMonth.split('-').map(Number);
   const dateStr=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  openSheet();
-  document.getElementById('d-inp').value=dateStr;
+  openSheet();document.getElementById('d-inp').value=dateStr;
 }
 function showDayPanel(d){
   const [y,m]=S.calMonth.split('-').map(Number);
@@ -983,7 +1004,7 @@ function rMonthly(){
   const lbls=months.map(ym=>{const [,mm]=ym.split('-');return parseInt(mm)+'月';});
   if(S.charts.b)S.charts.b.destroy();
   const bc=document.getElementById('barChart');
-  if(bc)S.charts.b=new Chart(bc.getContext('2d'),{type:'bar',data:{labels:lbls,datasets:[{label:'収入',data:incD,backgroundColor:'rgba(74,130,60,.7)',borderRadius:4},{label:'支出',data:expD,backgroundColor:'rgba(192,104,74,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>v===0?'0':fmt(v),font:{size:7}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}});
+  if(bc&&typeof Chart!=='undefined')try{S.charts.b=new Chart(bc.getContext('2d'),{type:'bar',data:{labels:lbls,datasets:[{label:'収入',data:incD,backgroundColor:'rgba(74,130,60,.7)',borderRadius:4},{label:'支出',data:expD,backgroundColor:'rgba(192,104,74,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>v===0?'0':fmt(v),font:{size:7}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}});}catch(e){console.warn('bar chart:',e.message);}
   const txs=mTx(curYM);
   // カテゴリ別：取引+サブスクを合算
   const ctot={};
@@ -1027,7 +1048,7 @@ function rAnnual(){
   document.getElementById('an-sbar').style.width=Math.max(0,rate)+'%';
   if(S.charts.a)S.charts.a.destroy();
   const ac2=document.getElementById('annualChart');
-  if(ac2)S.charts.a=new Chart(ac2.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'収入',data:incArr,backgroundColor:'rgba(74,130,60,.6)',borderRadius:3},{label:'支出',data:expArr,backgroundColor:'rgba(192,104,74,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>c.raw?(' '+fmt(c.raw)):' —'}}},scales:{y:{ticks:{callback:v=>v?fmt(v):'',font:{size:7}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:8}},grid:{display:false}}}}});
+  if(ac2&&typeof Chart!=='undefined')try{S.charts.a=new Chart(ac2.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'収入',data:incArr,backgroundColor:'rgba(74,130,60,.6)',borderRadius:3},{label:'支出',data:expArr,backgroundColor:'rgba(192,104,74,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>c.raw?(' '+fmt(c.raw)):' —'}}},scales:{y:{ticks:{callback:v=>v?fmt(v):'',font:{size:7}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:8}},grid:{display:false}}}}});}catch(e){console.warn('annual chart:',e.message);}
   // Table: 当年なら当月まで、過去/未来は12ヶ月全表示
   const curMo=12; // 当年含め12ヶ月すべて表示（データなしは—）
   let tblHtml='';

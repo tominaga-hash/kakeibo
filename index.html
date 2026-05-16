@@ -1060,7 +1060,7 @@ function editTx(id){
   document.getElementById('c-sec-lbl').textContent='カテゴリ（'+(t.type==='expense'?'支出':'収入')+'）';
   rCatGrid();document.getElementById('input-ov').classList.add('on');
 }
-function closeSheet(){closeNp();document.getElementById('input-ov').classList.remove('on');}
+function closeSheet(){closeNp();document.getElementById('input-ov').classList.remove('on');if(S.tab==='cal'&&S.selDay)showDayPanel(S.selDay);}
 function ovClose(id){document.getElementById(id).classList.remove('on');}
 function setType(t){
   S.type=t;S.catId=t==='expense'?'food':'salary';

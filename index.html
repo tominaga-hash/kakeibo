@@ -207,6 +207,11 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .amt-fld.focused{border-color:#3A7030;background:#f0fdf4;}
 .np-panel{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #e5e7eb;z-index:300;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);padding-bottom:env(safe-area-inset-bottom,0px);}
 .np-panel.on{transform:translateY(0);}
+/* 収支入力シート — 下からスライドイン */
+#input-ov{display:flex;visibility:hidden;opacity:0;pointer-events:none;transition:opacity .22s;}
+#input-ov.on{visibility:visible;opacity:1;pointer-events:auto;}
+#input-ov .sh{transform:translateY(100%);transition:transform .32s cubic-bezier(.32,.72,0,1);}
+#input-ov.on .sh{transform:translateY(0);}
 .np-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 13px 6px;}
 .np-done{background:#3A7030;color:#fff;border:none;border-radius:10px;padding:8px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;touch-action:manipulation;}
 .shdl{width:34px;height:4px;background:#e5e7eb;border-radius:2px;margin:9px auto 12px;}
@@ -1575,6 +1580,7 @@ async function confirmClear(){
   toast('🗑 データを削除しました');
 }
 
+// ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
 //  SERVICE WORKER 登録
 // ═══════════════════════════════════════════════════════════

@@ -15,7 +15,7 @@
 
 <!-- Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js"></script>
+<script src="./dexie.min.js"></script>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -864,7 +864,7 @@ function rHome(){
 function txHTML(t,withDel,withEdit=true){
   const c=gc(t.category_id);const s=t.type==='income'?'+':'-',cl=t.type==='income'?'inc':'exp';
   const d=t.date.slice(5).replace('-','/');
-  const del=withDel?`<div class="swdel" id="d-${t.id}" onclick="delTx('${t.id}')">削除</div>`:'';
+  const del=withDel?`<div class="swdel" ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation();delTx('${t.id}')" onclick="delTx('${t.id}')">削除</div>`:'';
   const ed=withEdit?`<button class="edit-btn" onclick="editTx('${t.id}')">✏️</button>`:'';
   const sw=withDel?`ontouchstart="swS(event,'${t.id}')" ontouchmove="swM(event,'${t.id}')" ontouchend="swE(event,'${t.id}')" id="r-${t.id}"`:'';
   return`<div class="txi" ${sw}><div class="txic" style="background:${c.color}1a;">${c.icon}</div><div class="txin"><div class="txn">${t.memo||c.name}</div><div class="txd">${d} · ${c.name}</div></div><div class="txa ${cl}">${s}${fmt(t.amount)}</div>${ed}${del}</div>`;
@@ -1095,8 +1095,8 @@ function rSubsc(){
 // ═══════════════════════════════════════════════════════
 let swX={};
 function swS(e,id){swX[id]=e.touches[0].clientX;}
-function swM(e,id){const dx=swX[id]-e.touches[0].clientX;const d=document.getElementById('d-'+id);if(d&&dx>0)d.style.transform=`translateX(${68-Math.min(68,dx)}px)`;}
-function swE(e,id){const dx=swX[id]-(e.changedTouches[0]?.clientX||swX[id]);const d=document.getElementById('d-'+id);if(d)d.style.transform=dx>34?'translateX(0)':'translateX(68px)';}
+function swM(e,id){const dx=swX[id]-e.touches[0].clientX;const d=e.currentTarget.querySelector('.swdel');if(d&&dx>0)d.style.transform=`translateX(${68-Math.min(68,dx)}px)`;}
+function swE(e,id){const dx=swX[id]-(e.changedTouches[0]?.clientX||swX[id]);const d=e.currentTarget.querySelector('.swdel');if(d)d.style.transform=dx>34?'translateX(0)':'translateX(68px)';}
 async function delTx(id){
   TXS=TXS.filter(t=>t.id!==id);
   await dbDel(id);
@@ -1269,7 +1269,7 @@ function rCpModal(){
   document.getElementById('cp-list').innerHTML=S.cpSrcTxs.map(t=>{
     const c=gc(t.category_id);const day=parseInt(t.date.slice(8));
     const s=t.type==='income'?'+':'-';const col=t.type==='income'?'#22c55e':'#ef4444';
-    return`<div class="cpit" onclick="togCp('${t.id}')"><div class="cpck" id="ck-${t.id}"></div><div class="cpii" style="background:${c.color}1a;">${c.icon}</div><div class="cpin"><div class="cpnm">${t.memo||c.name}</div><div class="cpsb">${c.name} · ${parseInt(pm)}月${day}日 → <strong style="color:#0284c7;">${parseInt(dm)}月${day}日</strong></div></div><div style="font-size:13px;font-weight:700;color:${col};white-space:nowrap;">${s}${fmt(t.amount)}</div></div>`;
+    return`<div class="cpit" onclick="togCp('${t.id}')">${S.cpSel.has(t.id)?'<div class="cpck on" id="ck-'+t.id+'"><svg width="12" height="10" viewBox="0 0 12 10"><path d="M1 5L4.5 8.5L11 1.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>':`<div class="cpck" id="ck-${t.id}"></div>`}<div class="cpii" style="background:${c.color}1a;">${c.icon}</div><div class="cpin"><div class="cpnm">${t.memo||c.name}</div><div class="cpsb">${c.name} · ${parseInt(pm)}月${day}日 → <strong style="color:#0284c7;">${parseInt(dm)}月${day}日</strong></div></div><div style="font-size:13px;font-weight:700;color:${col};white-space:nowrap;">${s}${fmt(t.amount)}</div></div>`;
   }).join('')||'<div style="padding:18px;text-align:center;font-size:12px;color:#9ca3af;">この月の取引がありません</div>';
   updCpBtn();
 }
@@ -1277,8 +1277,11 @@ function togCp(id){const ck=document.getElementById('ck-'+id);if(S.cpSel.has(id)
 function updCpBtn(){const n=S.cpSel.size;document.getElementById('cp-cnt').textContent=n;document.getElementById('cp-btn').disabled=(n===0);}
 async function execCopy(){
   const n=S.cpSel.size;if(!n)return;
+  // ダブルタップ防止：選択を即キャプチャしてクリア
+  const sel=new Set(S.cpSel);S.cpSel=new Set();
+  const btn=document.getElementById('cp-btn');if(btn)btn.disabled=true;
   const [dy,dm]=S.cpDestMonth.split('-');
-  const newTxs=S.cpSrcTxs.filter(t=>S.cpSel.has(t.id)).map(t=>({
+  const newTxs=S.cpSrcTxs.filter(t=>sel.has(t.id)).map(t=>({
     id:uid(),type:t.type,amount:t.amount,category_id:t.category_id,
     date:S.cpDestMonth+'-'+t.date.slice(8),memo:t.memo
   }));
@@ -1497,5 +1500,4 @@ window.addEventListener('load',()=>{
   initDB();
 });
 </script>
-</body>
-</html>
+</

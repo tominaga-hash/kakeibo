@@ -2,13 +2,13 @@
    家計簿 Service Worker  v2.0
    オフライン対応 + キャッシュ戦略
 ───────────────────────────────────────────── */
-const CACHE_NAME = 'kakeibo-v32';
+const CACHE_NAME = 'kakeibo-v33';
 
 // キャッシュするアセット（アプリシェル）
 const SHELL_ASSETS = [
   './index.html',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js'
+  './dexie.min.js'
 ];
 
 // ── インストール：アプリシェルをキャッシュ

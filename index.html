@@ -113,7 +113,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .cal-sum-lbl{font-size:9px;color:#9ca3af;font-weight:500;letter-spacing:0.03em;}
 .cal-sum-val{font-size:13px;font-weight:700;}
 .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:#EBF5E8;border-bottom:1px solid #c8dfc4;padding:0;}
-#sc-cal{overflow-y:hidden;display:flex;flex-direction:column;}
+#sc-cal{overflow-y:hidden;}#sc-cal.on{display:flex;flex-direction:column;}
 .cal-scroll{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;}
 .cdow{font-size:10px;font-weight:700;color:#4a7a3a;text-align:center;padding:6px 0 5px;letter-spacing:0.02em;}
 .cdow.su{color:#ef4444;}.cdow.sa{color:#3b82f6;}
@@ -753,6 +753,7 @@ async function initDB(){
   }catch(e){
     console.error('DB init error:',e);
     hideLoading();
+    try{rHome();}catch(re){console.warn('rHome err:',re);}
     toast('データ読み込みエラー。ページを再読み込みしてください。');
   }
 }

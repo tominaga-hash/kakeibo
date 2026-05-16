@@ -30,12 +30,12 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .st{font-size:15px;font-weight:700;color:#111;}
 .si{display:flex;align-items:center;gap:4px;}
 .ac{flex:1;overflow:hidden;position:relative;}
-.sc{position:absolute;inset:0;overflow-y:auto;background:#F5F2EC;display:none;-webkit-overflow-scrolling:touch;}
+.sc{position:absolute;inset:0;overflow-y:scroll;background:#F5F2EC;display:none;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;}
 .sc.on{display:block;}
 
 /* ── PWA スタンドアロン (iPhone にインストール後) ── */
 @media (display-mode: standalone) {
-  html,body{height:100%;overflow:hidden;}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
   body{background:#F5F2EC;padding:0;display:block;}
   .po{background:none;border-radius:0;padding:0;box-shadow:none;width:100%;height:100%;}
   .ph{width:100%;height:100%;min-height:100dvh;border-radius:0;}
@@ -46,7 +46,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 }
 /* モバイルブラウザでも同様に全画面表示 */
 @media (max-width: 480px) {
-  html,body{height:100%;overflow:hidden;}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
   body{background:#F5F2EC;padding:0;display:block;}
   .po{background:none;border-radius:0;padding:0;box-shadow:none;width:100%;height:100%;}
   .ph{width:100%;height:100%;min-height:100dvh;border-radius:0;}
@@ -176,7 +176,13 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 /* Overlays */
 .ov{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;align-items:flex-end;}
 .ov.on{display:flex;}
-.sh{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:93%;overflow-y:auto;padding-bottom:22px;}
+.sh{background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:88%;overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:22px;}
+.amt-fld{background:#f9fafb;border:2px solid #e5e7eb;border-radius:12px;padding:10px 16px;font-size:28px;font-weight:700;color:#111;text-align:right;cursor:pointer;margin:0 13px 12px;min-height:54px;display:flex;align-items:center;justify-content:flex-end;transition:border-color .15s,background .15s;}
+.amt-fld.focused{border-color:#3A7030;background:#f0fdf4;}
+.np-panel{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #e5e7eb;z-index:300;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);padding-bottom:env(safe-area-inset-bottom,0px);}
+.np-panel.on{transform:translateY(0);}
+.np-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 13px 6px;}
+.np-done{background:#3A7030;color:#fff;border:none;border-radius:10px;padding:8px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;touch-action:manipulation;}
 .shdl{width:34px;height:4px;background:#e5e7eb;border-radius:2px;margin:9px auto 12px;}
 .shh{display:flex;justify-content:space-between;align-items:center;padding:0 14px 9px;}
 .sht{font-size:16px;font-weight:700;color:#111;}
@@ -192,7 +198,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .dl{font-size:13px;color:#6b7280;}
 .dv{font-size:13px;font-weight:600;color:#111;border:none;background:none;font-family:inherit;}
 .slbl{font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;padding:3px 13px 6px;}
-.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 13px;margin-bottom:10px;max-height:186px;overflow-y:auto;}
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 13px;margin-bottom:10px;}
 .cbtn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 3px;border:2px solid transparent;border-radius:11px;background:#f9fafb;cursor:pointer;font-family:inherit;transition:all .14s;}
 .cbtn.on{border-color:#5A9A50;background:#EBF5E8;}
 .ci{font-size:18px;}.cn{font-size:10px;color:#6b7280;text-align:center;line-height:1.2;}
@@ -468,22 +474,30 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <div class="shdl"></div>
         <div id="edit-badge" class="edit-badge" style="display:none;">✏️ 取引を編集中</div>
         <div class="shh"><div class="sht" id="sh-title">収支を記録</div><button class="shc" onclick="closeSheet()">×</button></div>
-        <div class="seg"><button class="sbtn on" id="s-exp" onclick="setType('expense')">支出</button><button class="sbtn" id="s-inc" onclick="setType('income')">収入</button></div>
-        <div class="adsp" id="amt-d">¥ 0</div>
-        <div class="np">
-          <button class="nb" onclick="ni('1')">1</button><button class="nb" onclick="ni('2')">2</button><button class="nb" onclick="ni('3')">3</button>
-          <button class="nb" onclick="ni('4')">4</button><button class="nb" onclick="ni('5')">5</button><button class="nb" onclick="ni('6')">6</button>
-          <button class="nb" onclick="ni('7')">7</button><button class="nb" onclick="ni('8')">8</button><button class="nb" onclick="ni('9')">9</button>
-          <button class="nb sp" onclick="ni('000')">000</button><button class="nb" onclick="ni('0')">0</button><button class="nb sp" onclick="nd()">⌫</button>
-        </div>
         <div class="dr"><span class="dl">📅 日付</span><input type="date" id="d-inp" class="dv"/></div>
-        <div class="slbl" id="c-sec-lbl">カテゴリ（支出）</div>
-        <div class="cgrid" id="c-grid"></div>
         <div class="slbl">メモ（任意）</div>
         <input type="text" id="m-inp" class="mi" placeholder="例）家賃・電気代・スーパー等" maxlength="28"/>
+        <div class="seg" style="margin:0 13px 10px;"><button class="sbtn on" id="s-exp" onclick="setType('expense')">支出</button><button class="sbtn" id="s-inc" onclick="setType('income')">収入</button></div>
+        <div class="amt-fld" id="amt-preview" onclick="openNp()">¥ 0</div>
+        <div class="slbl" id="c-sec-lbl">カテゴリ（支出）</div>
+        <div class="cgrid" id="c-grid"></div>
         <button class="svbtn" id="save-btn" onclick="saveTx()">保存する</button>
         <button class="rcbt" id="rcbt" onclick="triggerReceiptScan()">📸 レシートから読み取る</button>
         <input type="file" id="receipt-input" accept="image/*" capture="environment" style="display:none;" onchange="handleReceiptImage(this)"/>
+      </div>
+    </div>
+
+    <!-- ── Numpad Panel (スライドイン) ── -->
+    <div class="np-panel" id="np-panel">
+      <div class="np-hdr">
+        <div class="adsp" id="amt-d">¥ 0</div>
+        <button class="np-done" onclick="closeNp()">完了</button>
+      </div>
+      <div class="np">
+        <button class="nb" onclick="ni('1')">1</button><button class="nb" onclick="ni('2')">2</button><button class="nb" onclick="ni('3')">3</button>
+        <button class="nb" onclick="ni('4')">4</button><button class="nb" onclick="ni('5')">5</button><button class="nb" onclick="ni('6')">6</button>
+        <button class="nb" onclick="ni('7')">7</button><button class="nb" onclick="ni('8')">8</button><button class="nb" onclick="ni('9')">9</button>
+        <button class="nb sp" onclick="ni('000')">000</button><button class="nb" onclick="ni('0')">0</button><button class="nb sp" onclick="nd()">⌫</button>
       </div>
     </div>
 
@@ -701,7 +715,23 @@ async function dbSaveSetting(key,value){await db.settings.put({key,value});}
 // ═══════════════════════════════════════════════════════
 //  TAB NAVIGATION
 // ═══════════════════════════════════════════════════════
+function openNp(){
+  const v=parseInt(S.amt||'0');
+  document.getElementById('amt-d').textContent='¥ '+v.toLocaleString('ja-JP');
+  document.getElementById('amt-preview').classList.add('focused');
+  document.getElementById('np-panel').classList.add('on');
+}
+function closeNp(){
+  document.getElementById('np-panel').classList.remove('on');
+  const p=document.getElementById('amt-preview');
+  if(p){
+    p.classList.remove('focused');
+    const v=parseInt(S.amt||'0');
+    p.textContent='¥ '+v.toLocaleString('ja-JP');
+  }
+}
 function closeAllOv(){
+  closeNp();
   ['input-ov','add-sub-ov','add-cat-ov','cp-ov'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.classList.remove('on');
   });
@@ -970,6 +1000,7 @@ async function delTx(id){
 //  INPUT SHEET
 // ═══════════════════════════════════════════════════════
 function openSheet(){
+  closeNp();
   S.editingId=null;
   document.getElementById('edit-badge').style.display='none';
   document.getElementById('sh-title').textContent='収支を記録';
@@ -978,6 +1009,7 @@ function openSheet(){
   S.type='expense';S.amt='';S.catId='food';
   document.getElementById('s-exp').classList.add('on');document.getElementById('s-inc').classList.remove('on');
   document.getElementById('amt-d').textContent='¥ 0';
+  document.getElementById('amt-preview').textContent='¥ 0';
   document.getElementById('m-inp').value='';
   document.getElementById('d-inp').value=todayStr();
   rCatGrid();document.getElementById('input-ov').classList.add('on');
@@ -993,12 +1025,13 @@ function editTx(id){
   document.getElementById('s-exp').classList.toggle('on',t.type==='expense');
   document.getElementById('s-inc').classList.toggle('on',t.type==='income');
   document.getElementById('amt-d').textContent='¥ '+t.amount.toLocaleString('ja-JP');
+  document.getElementById('amt-preview').textContent='¥ '+t.amount.toLocaleString('ja-JP');
   document.getElementById('m-inp').value=t.memo||'';
   document.getElementById('d-inp').value=t.date;
   document.getElementById('c-sec-lbl').textContent='カテゴリ（'+(t.type==='expense'?'支出':'収入')+'）';
   rCatGrid();document.getElementById('input-ov').classList.add('on');
 }
-function closeSheet(){document.getElementById('input-ov').classList.remove('on');}
+function closeSheet(){closeNp();document.getElementById('input-ov').classList.remove('on');}
 function ovClose(id){document.getElementById(id).classList.remove('on');}
 function setType(t){
   S.type=t;S.catId=t==='expense'?'food':'salary';
@@ -1060,6 +1093,7 @@ async function handleReceiptImage(input){
     // フォームに反映
     if(amount){S.amt=String(amount);document.getElementById('amt-d').textContent='¥ '+amount.toLocaleString('ja-JP');}
     if(dateStr){document.getElementById('d-inp').value=dateStr;}
+    const pv=document.getElementById('amt-preview');if(pv&&amount)pv.textContent='¥ '+amount.toLocaleString('ja-JP');
 
     if(amount||dateStr){
       toast('📸 読み取り完了！'+(amount?` ¥${amount.toLocaleString('ja-JP')}`:'')+( dateStr?` ${dateStr}`:''));

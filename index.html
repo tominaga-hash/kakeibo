@@ -140,7 +140,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .cdn.su{color:#dc2626;}.cdn.sa{color:#2563eb;}.cdn.hol{color:#dc2626;}
 .cdots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;min-height:8px;margin:0 1px;}
 .cdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15);}.sub-dot{border-radius:2px;transform:rotate(45deg);}
-.camnt{font-size:9px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;text-align:center;line-height:1;letter-spacing:-0.02em;}
+.camnt{font-size:9px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;text-align:center;line-height:1;letter-spacing:-0.03em;white-space:nowrap;width:100%;overflow:hidden;}
 .day-panel{margin:0 13px;}
 /* 月次一覧パネル */
 .mo-panel{margin:8px 13px 0;}
@@ -342,7 +342,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 </div>
 
 <!-- Phone -->
-<div><div class="po"><div class="ph">
+<div id="app"><div class="po"><div class="ph">
 
   <!-- Loading screen -->
   <div class="loading-sc" id="loading-sc">
@@ -734,6 +734,7 @@ var S={
 function aC(){return[...DC,...CC];}
 function gc(id){return aC().find(c=>c.id===id)||{name:'?',icon:'❓',color:'#999',type:'expense',is_custom:false};}
 function fmt(n){return'¥ '+n.toLocaleString('ja-JP');}
+function fmtC(n){if(n>=100000)return Math.round(n/10000)+'万';if(n>=10000)return(Math.round(n/1000)/10)+'万';return n.toLocaleString('ja-JP');}
 function mTx(m){return TXS.filter(t=>t.date.startsWith(m));}
 function sE(txs){return txs.filter(t=>t.type==='expense').reduce((a,t)=>a+t.amount,0);}
 function sI(txs){return txs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amount,0);}
@@ -944,8 +945,8 @@ function rCal(){
         const subDots=subs.slice(0,3-cats.length).map(s=>`<div class="cdot sub-dot" style="background:${s.color||'#8b5cf6'};"></div>`).join('');
         const dots=txDots+subDots;
         const totalExp=exp+subExp;
-        const expAmtStr=totalExp>0?`<div class="camnt" style="color:#ef4444;">-${fmt(totalExp)}</div>`:'';
-        const incAmtStr=inc>0?`<div class="camnt" style="color:#22c55e;">+${fmt(inc)}</div>`:'';
+        const expAmtStr=totalExp>0?`<div class="camnt" style="color:#ef4444;">-${fmtC(totalExp)}</div>`:'';
+        const incAmtStr=inc>0?`<div class="camnt" style="color:#22c55e;">+${fmtC(inc)}</div>`:'';
         const dateKey=`${String(y).padStart(4,'0')}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         const isHol=HOLIDAYS.has(dateKey);
         const isWkend=(c===0||c===6);html+=`<div class="cc ${isSel?'sel':''} ${isToday?'tod':''} ${isWkend?'wkend':''}" onclick="selDay(${day})"><span class="cdn ${c===0||isHol?'su':c===6?'sa':''}">${day}</span>${expAmtStr}${incAmtStr}</div>`;
@@ -1211,7 +1212,12 @@ function editTx(id){
   document.getElementById('amt-d').textContent='¥ '+t.amount.toLocaleString('ja-JP');
   document.getElementById('amt-preview').textContent='¥ '+t.amount.toLocaleString('ja-JP');
   document.getElementById('m-inp').value=t.memo||'';
-  document.getElementById('d-inp').value=t.date;
+  // 無効な日付（例: 2026-02-30）を末日に自動補正
+  let dateVal=t.date;
+  const [dvy,dvm,dvd]=dateVal.split('-');
+  const daysInMo=new Date(parseInt(dvy),parseInt(dvm),0).getDate();
+  if(parseInt(dvd)>daysInMo)dateVal=`${dvy}-${dvm}-${String(daysInMo).padStart(2,'0')}`;
+  document.getElementById('d-inp').value=dateVal;
   document.getElementById('c-sec-lbl').textContent='カテゴリ（'+(t.type==='expense'?'支出':'収入')+'）';
   rCatGrid();document.getElementById('input-ov').classList.add('on');
 }
@@ -1338,6 +1344,7 @@ function chCpDest(d){
 function rCpModal(){
   const [py,pm]=S.cpMonth.split('-');
   const [dy,dm]=S.cpDestMonth.split('-');
+  const daysInDest=new Date(parseInt(dy),parseInt(dm),0).getDate();
   document.getElementById('cp-mo-lbl').textContent=`${py}年${parseInt(pm)}月`;
   document.getElementById('cp-dest-lbl').textContent=`${dy}年${parseInt(dm)}月`;
   document.getElementById('cp-sub').textContent=`${parseInt(pm)}月の取引を${dy}年${parseInt(dm)}月の同じ日にコピーします。`;
@@ -1345,7 +1352,9 @@ function rCpModal(){
   document.getElementById('cp-list').innerHTML=S.cpSrcTxs.map(t=>{
     const c=gc(t.category_id);const day=parseInt(t.date.slice(8));
     const s=t.type==='income'?'+':'-';const col=t.type==='income'?'#22c55e':'#ef4444';
-    return`<div class="cpit" onclick="togCp('${t.id}')">${S.cpSel.has(t.id)?'<div class="cpck on" id="ck-'+t.id+'"><svg width="12" height="10" viewBox="0 0 12 10"><path d="M1 5L4.5 8.5L11 1.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>':`<div class="cpck" id="ck-${t.id}"></div>`}<div class="cpii" style="background:${c.color}1a;">${c.icon}</div><div class="cpin"><div class="cpnm">${t.memo||c.name}</div><div class="cpsb">${c.name} · ${parseInt(pm)}月${day}日 → <strong style="color:#0284c7;">${parseInt(dm)}月${day}日</strong></div></div><div style="font-size:13px;font-weight:700;color:${col};white-space:nowrap;">${s}${fmt(t.amount)}</div></div>`;
+    const noDay=day>daysInDest;
+    const destDay=noDay?`<span style="color:#f59e0b;">⚠️${parseInt(dm)}月は${daysInDest}日まで・スキップ</span>`:`<strong style="color:#0284c7;">${parseInt(dm)}月${day}日</strong>`;
+    return`<div class="cpit${noDay?' cpsk':''}" onclick="togCp('${t.id}')">${S.cpSel.has(t.id)?'<div class="cpck on" id="ck-'+t.id+'"><svg width="12" height="10" viewBox="0 0 12 10"><path d="M1 5L4.5 8.5L11 1.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>':`<div class="cpck" id="ck-${t.id}"></div>`}<div class="cpii" style="background:${c.color}1a;${noDay?'opacity:.45;':''}">${c.icon}</div><div class="cpin"><div class="cpnm">${t.memo||c.name}</div><div class="cpsb">${c.name} · ${parseInt(pm)}月${day}日 → ${destDay}</div></div><div style="font-size:13px;font-weight:700;color:${col};white-space:nowrap;${noDay?'opacity:.45;':''}">${s}${fmt(t.amount)}</div></div>`;
   }).join('')||'<div style="padding:18px;text-align:center;font-size:12px;color:#9ca3af;">この月の取引がありません</div>';
   updCpBtn();
 }
@@ -1357,13 +1366,19 @@ async function execCopy(){
   const sel=new Set(S.cpSel);S.cpSel=new Set();
   const btn=document.getElementById('cp-btn');if(btn)btn.disabled=true;
   const [dy,dm]=S.cpDestMonth.split('-');
-  const newTxs=S.cpSrcTxs.filter(t=>sel.has(t.id)).map(t=>({
+  const daysInDest=new Date(parseInt(dy),parseInt(dm),0).getDate();
+  const srcTxs=S.cpSrcTxs.filter(t=>sel.has(t.id));
+  const validTxs=srcTxs.filter(t=>parseInt(t.date.slice(8))<=daysInDest);
+  const skipped=srcTxs.length-validTxs.length;
+  if(!validTxs.length){toast('⚠️ コピーできる取引がありません（日付が存在しない月です）');updCpBtn();return;}
+  const newTxs=validTxs.map(t=>({
     id:uid(),type:t.type,amount:t.amount,category_id:t.category_id,
     date:S.cpDestMonth+'-'+t.date.slice(8),memo:t.memo
   }));
   TXS.push(...newTxs);
   await db.transactions.bulkAdd(newTxs);
-  closeCpModal();rHome();if(S.tab==='cal')rCal();toast(`📋 ${n}件の取引をコピーしました ✓`);
+  closeCpModal();rHome();if(S.tab==='cal')rCal();
+  toast(skipped>0?`📋 ${validTxs.length}件コピー完了（${skipped}件は存在しない日付のためスキップ）`:`📋 ${validTxs.length}件の取引をコピーしました ✓`);
 }
 function closeCpModal(){document.getElementById('cp-ov').classList.remove('on');}
 function cpOvClose(e){if(e.target===document.getElementById('cp-ov'))closeCpModal();}
@@ -1568,33 +1583,13 @@ if('serviceWorker' in navigator){
   });
 }
 
-// ═══════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════
 //  INIT
-// ═══════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════
 window.addEventListener('load',()=>{
-  document.getElementById('d-inp').value=todayStr();
+  document.getElementById('app').style.display='block';
   initDB();
-  // 8秒タイムアウト：それでもローディングなら再試行ボタンを表示
-  setTimeout(()=>showLoadErr(),8000);
-});
-</script>
-</替わり時に1回だけリロード（二重リロード防止フラグ付き）
-    let swRefreshing=false;
-    navigator.serviceWorker.addEventListener('controllerchange',()=>{
-      if(swRefreshing)return;
-      swRefreshing=true;
-      window.location.reload();
-    });
-  });
-}
-
-// ═══════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════
-window.addEventListener('load',()=>{
-  document.getElementById('d-inp').value=todayStr();
-  initDB();
-  // 8秒タイムアウト：それでもローディングなら再試行ボタンを表示
+  // サービスワーカー切り替わり時に1回だけリロード
   setTimeout(()=>showLoadErr(),8000);
 });
 </script>

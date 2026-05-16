@@ -33,28 +33,37 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// ── フェッチ：Cache-First 戦略（オフライン時もアプリが動く）
+// ── フェッチ：index.htmlはNetwork-First、他はCache-First
 self.addEventListener('fetch', event => {
-  // chrome-extension や non-http リクエストは無視
   if (!event.request.url.startsWith('http')) return;
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
+  const isNav = event.request.mode === 'navigate' ||
+                event.request.url.endsWith('index.html');
 
-      return fetch(event.request).then(response => {
-        // 正常なレスポンスのみキャッシュ
-        if (response && response.status === 200 && response.type !== 'opaque') {
+  if (isNav) {
+    // index.html: ネットワーク優先（更新を即反映）→ 失敗時はキャッシュ
+    event.respondWith(
+      fetch(event.request).then(response => {
+        if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => {
-        // オフライン時：index.htmlへフォールバック
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-      });
-    })
-  );
+      }).catch(() => caches.match('./index.html'))
+    );
+  } else {
+    // CDNライブラリ等: Cache-First（オフライン対応）
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          if (response && response.status === 200 && response.type !== 'opaque') {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        });
+      })
+    );
+  }
 });

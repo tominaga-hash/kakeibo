@@ -868,7 +868,7 @@ function rCal(){
         const subDots=subs.slice(0,3-cats.length).map(s=>`<div class="cdot sub-dot" style="background:${s.color||'#8b5cf6'};"></div>`).join('');
         const dots=txDots+subDots;
         const totalExp=exp+subExp;
-        const amtStr=totalExp>0?`-${Math.round(totalExp/1000)}k`:inc>0?`+${Math.round(inc/1000)}k`:'';
+        const amtStr=totalExp>0?`-${fmt(totalExp)}`:inc>0?`+${fmt(inc)}`:''; 
         const amtCol=totalExp>0?'#ef4444':'#22c55e';
         html+=`<div class="cc ${isSel?'sel':''} ${isToday?'tod':''}" onclick="selDay(${day})"><span class="cdn ${c===0?'su':c===6?'sa':''}">${day}</span><div class="cdots">${dots}</div>${amtStr?`<div class="camnt" style="color:${amtCol};">${amtStr}</div>`:''}</div>`;
         day++;
@@ -930,7 +930,7 @@ function rMonthly(){
   const lbls=months.map(ym=>{const [,mm]=ym.split('-');return parseInt(mm)+'月';});
   if(S.charts.b)S.charts.b.destroy();
   const bc=document.getElementById('barChart');
-  if(bc)S.charts.b=new Chart(bc.getContext('2d'),{type:'bar',data:{labels:lbls,datasets:[{label:'収入',data:incD,backgroundColor:'rgba(74,130,60,.7)',borderRadius:4},{label:'支出',data:expD,backgroundColor:'rgba(192,104,74,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>v===0?'0':(Math.round(v/1000)/10)+'万',font:{size:8}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}});
+  if(bc)S.charts.b=new Chart(bc.getContext('2d'),{type:'bar',data:{labels:lbls,datasets:[{label:'収入',data:incD,backgroundColor:'rgba(74,130,60,.7)',borderRadius:4},{label:'支出',data:expD,backgroundColor:'rgba(192,104,74,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{y:{ticks:{callback:v=>v===0?'0':fmt(v),font:{size:7}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}});
   const txs=mTx(curYM);
   // カテゴリ別：取引+サブスクを合算
   const ctot={};
@@ -974,14 +974,14 @@ function rAnnual(){
   document.getElementById('an-sbar').style.width=Math.max(0,rate)+'%';
   if(S.charts.a)S.charts.a.destroy();
   const ac2=document.getElementById('annualChart');
-  if(ac2)S.charts.a=new Chart(ac2.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'収入',data:incArr,backgroundColor:'rgba(74,130,60,.6)',borderRadius:3},{label:'支出',data:expArr,backgroundColor:'rgba(192,104,74,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>c.raw?(' '+fmt(c.raw)):' —'}}},scales:{y:{ticks:{callback:v=>v?(Math.round(v/1000)/10)+'万':'',font:{size:8}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:8}},grid:{display:false}}}}});
+  if(ac2)S.charts.a=new Chart(ac2.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'収入',data:incArr,backgroundColor:'rgba(74,130,60,.6)',borderRadius:3},{label:'支出',data:expArr,backgroundColor:'rgba(192,104,74,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>c.raw?(' '+fmt(c.raw)):' —'}}},scales:{y:{ticks:{callback:v=>v?fmt(v):'',font:{size:7}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:8}},grid:{display:false}}}}});
   // Table: 当年なら当月まで、過去/未来は12ヶ月全表示
   const curMo=12; // 当年含め12ヶ月すべて表示（データなしは—）
   let tblHtml='';
   for(let mm=1;mm<=curMo;mm++){
     const inc=incArr[mm-1],exp=expArr[mm-1];
     const bal=inc-exp,bc=bal>=0?'#22c55e':'#ef4444';
-    tblHtml+=`<div class="mtbl-row"><span class="mtbl-m">${mm}月</span><span class="mtbl-v" style="color:#22c55e;text-align:right;">${inc?(inc/10000).toFixed(0)+'万':'—'}</span><span class="mtbl-v" style="color:#ef4444;text-align:right;">${exp?(exp/10000).toFixed(0)+'万':'—'}</span><span class="mtbl-b" style="color:${bc};text-align:right;">${(inc||exp)?(bal>=0?'+':'')+(bal/10000).toFixed(0)+'万':'—'}</span></div>`;
+    tblHtml+=`<div class="mtbl-row"><span class="mtbl-m">${mm}月</span><span class="mtbl-v" style="color:#22c55e;text-align:right;">${inc?fmt(inc):'—'}</span><span class="mtbl-v" style="color:#ef4444;text-align:right;">${exp?fmt(exp):'—'}</span><span class="mtbl-b" style="color:${bc};text-align:right;">${(inc||exp)?(bal>=0?'+':'')+fmt(Math.abs(bal)):'—'}</span></div>`;
   }
   document.getElementById('mtbl-body').innerHTML=tblHtml||'<div style="padding:14px;text-align:center;font-size:12px;color:#9ca3af;">データなし</div>';
 }

@@ -409,6 +409,11 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 
       <!-- Annual -->
       <div class="rcon" id="rc-annual">
+        <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:10px;background:#fff;margin-bottom:11px;">
+          <button class="nb sp" style="height:30px;width:30px;font-size:17px;border-radius:50%;padding:0;" onclick="chYr(-1)">‹</button>
+          <span style="font-size:15px;font-weight:700;color:#111;" id="r-yr-lbl">---</span>
+          <button class="nb sp" style="height:30px;width:30px;font-size:17px;border-radius:50%;padding:0;" onclick="chYr(1)">›</button>
+        </div>
         <div class="ann-sum">
           <div class="ann-c"><div class="ann-l">年間収入</div><div class="ann-v" id="an-inc">---</div></div>
           <div class="ann-c"><div class="ann-l">年間支出</div><div class="ann-v" id="an-exp">---</div></div>
@@ -457,7 +462,8 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
       <div style="font-size:10px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.1em;padding:0 16px 6px;">データ</div>
       <div class="sg">
         <div class="sr" onclick="doExp()"><span class="si2">📤</span><span class="sl">JSONバックアップ</span><span class="sav">›</span></div>
-        <div class="sr" onclick="doImp()"><span class="si2">📥</span><span class="sl">JSONから復元</span><span class="sav">›</span></div>
+        <label class="sr" for="imp-file" style="cursor:pointer;"><span class="si2">📥</span><span class="sl">JSONから復元</span><span class="sav">›</span></label>
+        <input type="file" id="imp-file" accept=".json" style="display:none;" onchange="loadJson(this)"/>
         <div class="sr" onclick="doCsv()"><span class="si2">📊</span><span class="sl">CSV エクスポート</span><span class="sav">›</span></div>
         <div class="sr" onclick="confirmClear()"><span class="si2">🗑</span><span class="sl" style="color:#ef4444;">全データを削除</span><span class="sav">›</span></div>
       </div>
@@ -588,8 +594,6 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 
 </div></div></div><!-- /phone -->
 
-<!-- hidden import input -->
-<input type="file" id="imp-file" accept=".json" style="display:none;" onchange="loadJson(this)"/>
 
 <script>
 // ═══════════════════════════════════════════════════════
@@ -651,7 +655,7 @@ const CUR_YM = nowYM();
 
 var S={
   tab:'home', type:'expense', amt:'', catId:'food',
-  mOff:0, calMonth:CUR_YM, selDay:null,
+  mOff:0, yOff:0, calMonth:CUR_YM, selDay:null,
   reportTab:'monthly', editingId:null,
   cpSel:new Set(), newCatColor:COLORS[0], newCatType:'expense',
   charts:{}, prevMoTxs:[], cpMonth:'', cpSrcTxs:[]
@@ -938,8 +942,16 @@ function rMonthly(){
 // ═══════════════════════════════════════════════════════
 //  REPORT — Annual
 // ═══════════════════════════════════════════════════════
+function chYr(d){
+  const baseY=parseInt(CUR_YM.split('-')[0]);
+  if(d<0)S.yOff=Math.max(-(baseY-2015),S.yOff-1);
+  else S.yOff=Math.min(5,S.yOff+1);
+  rAnnual();
+}
 function rAnnual(){
-  const curY=parseInt(CUR_YM.split('-')[0]);
+  const baseY=parseInt(CUR_YM.split('-')[0]);
+  const curY=baseY+S.yOff;
+  document.getElementById('r-yr-lbl').textContent=`${curY}年`;
   document.getElementById('annual-chart-lbl').textContent=`${curY}年 月別推移`;
   const months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   const incArr=Array(12).fill(0);const expArr=Array(12).fill(0);
@@ -958,15 +970,15 @@ function rAnnual(){
   if(S.charts.a)S.charts.a.destroy();
   const ac2=document.getElementById('annualChart');
   if(ac2)S.charts.a=new Chart(ac2.getContext('2d'),{type:'bar',data:{labels:months,datasets:[{label:'収入',data:incArr,backgroundColor:'rgba(74,130,60,.6)',borderRadius:3},{label:'支出',data:expArr,backgroundColor:'rgba(192,104,74,.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:9}},tooltip:{callbacks:{label:c=>c.raw?(' '+fmt(c.raw)):' —'}}},scales:{y:{ticks:{callback:v=>v?(Math.round(v/1000)/10)+'万':'',font:{size:8}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:8}},grid:{display:false}}}}});
-  // Table: months with data
-  const curMo=parseInt(CUR_YM.split('-')[1]);
+  // Table: 当年なら当月まで、過去/未来は12ヶ月全表示
+  const curMo=(curY===baseY)?parseInt(CUR_YM.split('-')[1]):12;
   let tblHtml='';
   for(let mm=1;mm<=curMo;mm++){
     const inc=incArr[mm-1],exp=expArr[mm-1];
     const bal=inc-exp,bc=bal>=0?'#22c55e':'#ef4444';
     tblHtml+=`<div class="mtbl-row"><span class="mtbl-m">${mm}月</span><span class="mtbl-v" style="color:#22c55e;text-align:right;">${inc?(inc/10000).toFixed(0)+'万':'—'}</span><span class="mtbl-v" style="color:#ef4444;text-align:right;">${exp?(exp/10000).toFixed(0)+'万':'—'}</span><span class="mtbl-b" style="color:${bc};text-align:right;">${(inc||exp)?(bal>=0?'+':'')+(bal/10000).toFixed(0)+'万':'—'}</span></div>`;
   }
-  document.getElementById('mtbl-body').innerHTML=tblHtml;
+  document.getElementById('mtbl-body').innerHTML=tblHtml||'<div style="padding:14px;text-align:center;font-size:12px;color:#9ca3af;">データなし</div>';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1244,14 +1256,13 @@ function editBudget(){
   toast('予算を更新しました ✓');
 }
 function doExp(){
-  const data=JSON.stringify({version:'1.0',exportedAt:new Date().toISOString(),budget:BUDGET,customCategories:CC,transactions:TXS},null,2);
+  const data=JSON.stringify({version:'1.0',exportedAt:new Date().toISOString(),budget:BUDGET,customCategories:CC,subscriptions:SUBS,transactions:TXS},null,2);
   const a=document.createElement('a');
   a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
   a.download=`kakeibo-backup-${todayStr()}.json`;
   a.click();
   toast('📦 JSONバックアップを出力しました ✓');
 }
-function doImp(){document.getElementById('imp-file').click();}
 async function loadJson(input){
   const file=input.files[0];if(!file)return;
   const text=await file.text();
@@ -1268,7 +1279,12 @@ async function loadJson(input){
       CC=data.customCategories;
     }
     if(data.budget){BUDGET=data.budget;await dbSaveSetting('budget',BUDGET);}
-    refreshPrevMo();rHome();updCatCnt();
+    if(data.subscriptions&&Array.isArray(data.subscriptions)){
+      await db.subscriptions.clear();
+      await db.subscriptions.bulkAdd(data.subscriptions);
+      SUBS=data.subscriptions;
+    }
+    refreshPrevMo();rHome();updCatCnt();if(S.tab==='rep')rSubsc();
     toast(`✅ ${TXS.length}件をインポートしました`);
   }catch(e){toast('⚠️ ファイルの形式が正しくありません');}
   input.value='';

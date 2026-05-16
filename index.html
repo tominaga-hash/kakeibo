@@ -738,6 +738,10 @@ function fmtC(n){if(n>=100000)return Math.round(n/10000)+'万';if(n>=10000)retur
 function mTx(m){return TXS.filter(t=>t.date.startsWith(m));}
 function sE(txs){return txs.filter(t=>t.type==='expense').reduce((a,t)=>a+t.amount,0);}
 function sI(txs){return txs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amount,0);}
+// ── iOS scroll lock: オーバーレイ表示中に背景スクリーンのスクロールを凍結 ──
+let _sLockEl=null,_sLockPos=0,_sLockN=0;
+function lockScroll(){const el=document.querySelector('.sc.on');if(el){if(_sLockN===0){_sLockEl=el;_sLockPos=el.scrollTop;el.style.overflowY='hidden';}  _sLockN++;}}
+function unlockScroll(){if(_sLockN>0){_sLockN--;if(_sLockN===0&&_sLockEl){_sLockEl.style.overflowY='';_sLockEl.scrollTop=_sLockPos;_sLockEl=null;}}}
 function uid(){return'tx'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function todayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 
@@ -1185,6 +1189,7 @@ async function delTx(id){
 //  INPUT SHEET
 // ═══════════════════════════════════════════════════════
 function openSheet(){
+  lockScroll();
   closeNp();
   S.editingId=null;
   document.getElementById('edit-badge').style.display='none';
@@ -1221,7 +1226,7 @@ function editTx(id){
   document.getElementById('c-sec-lbl').textContent='カテゴリ（'+(t.type==='expense'?'支出':'収入')+'）';
   rCatGrid();document.getElementById('input-ov').classList.add('on');
 }
-function closeSheet(){closeNp();document.getElementById('input-ov').classList.remove('on');if(S.tab==='cal'){if(S.selDay)showDayPanel(S.selDay);else showMonthPanel();}}
+function closeSheet(){unlockScroll();closeNp();document.getElementById('input-ov').classList.remove('on');if(S.tab==='cal'){if(S.selDay)showDayPanel(S.selDay);else showMonthPanel();}}
 function ovClose(id){document.getElementById(id).classList.remove('on');}
 function setType(t){
   S.type=t;S.catId=t==='expense'?'food':'salary';
@@ -1326,6 +1331,7 @@ async function saveTx(){
 //  COPY FROM PREV MONTH
 // ═══════════════════════════════════════════════════════
 function openCpModal(){
+  lockScroll();
   S.cpMonth=prevYM(CUR_YM);
   S.cpDestMonth=CUR_YM;
   S.cpSel=new Set();
@@ -1380,14 +1386,14 @@ async function execCopy(){
   closeCpModal();rHome();if(S.tab==='cal')rCal();
   toast(skipped>0?`📋 ${validTxs.length}件コピー完了（${skipped}件は存在しない日付のためスキップ）`:`📋 ${validTxs.length}件の取引をコピーしました ✓`);
 }
-function closeCpModal(){document.getElementById('cp-ov').classList.remove('on');}
+function closeCpModal(){unlockScroll();document.getElementById('cp-ov').classList.remove('on');}
 function cpOvClose(e){if(e.target===document.getElementById('cp-ov'))closeCpModal();}
 
 // ═══════════════════════════════════════════════════════
 //  CATEGORY MANAGER
 // ═══════════════════════════════════════════════════════
-function openCatMgr(){rCatMgr();document.getElementById('cat-fo').classList.add('on');}
-function closeCatMgr(){document.getElementById('cat-fo').classList.remove('on');}
+function openCatMgr(){lockScroll();rCatMgr();document.getElementById('cat-fo').classList.add('on');}
+function closeCatMgr(){unlockScroll();document.getElementById('cat-fo').classList.remove('on');}
 function rCatMgr(){
   ['expense','income'].forEach(type=>{
     const id=type==='expense'?'exp-cl':'inc-cl';
@@ -1400,8 +1406,8 @@ async function delCat(id){
   rCatMgr();toast('カテゴリを削除しました');
 }
 function updCatCnt(){const n=aC().length;const el=document.getElementById('cat-cnt');if(el)el.textContent=n+'カテゴリ';}
-function openAddCat(){S.newCatColor=COLORS[0];S.newCatType='expense';document.getElementById('nc-name').value='';document.getElementById('nc-icon').value='';document.getElementById('nc-exp').classList.add('on');document.getElementById('nc-inc').classList.remove('on');rClrGrid();document.getElementById('add-cat-ov').classList.add('on');}
-function closeAddCat(){document.getElementById('add-cat-ov').classList.remove('on');}
+function openAddCat(){lockScroll();S.newCatColor=COLORS[0];S.newCatType='expense';document.getElementById('nc-name').value='';document.getElementById('nc-icon').value='';document.getElementById('nc-exp').classList.add('on');document.getElementById('nc-inc').classList.remove('on');rClrGrid();document.getElementById('add-cat-ov').classList.add('on');}
+function closeAddCat(){unlockScroll();document.getElementById('add-cat-ov').classList.remove('on');}
 function acOvClose(e){if(e.target===document.getElementById('add-cat-ov'))closeAddCat();}
 function setNcType(t){S.newCatType=t;document.getElementById('nc-exp').classList.toggle('on',t==='expense');document.getElementById('nc-inc').classList.toggle('on',t==='income');}
 function rClrGrid(){document.getElementById('color-grid').innerHTML=COLORS.map(col=>`<div class="clrd ${S.newCatColor===col?'on':''}" style="background:${col};" onclick="pickClr('${col}')"></div>`).join('');}
@@ -1505,9 +1511,10 @@ function openAddSubsc(){
   document.getElementById('sub-c-grid').innerHTML=aC().filter(c=>c.type==='expense').map(c=>`<button class="cbtn ${S.subCatId===c.id?'on':''}" onclick="S.subCatId='${c.id}';document.querySelectorAll('#sub-c-grid .cbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')"><span class="ci">${c.icon}</span><span class="cn">${c.name}</span></button>`).join('');
   // カラーグリッド
   document.getElementById('sub-color-grid').innerHTML=COLORS.map(c=>`<div class="clrc ${S.subColor===c?'on':''}" style="background:${c}" onclick="S.subColor='${c}';document.querySelectorAll('#sub-color-grid .clrc').forEach(b=>b.classList.remove('on'));this.classList.add('on')"></div>`).join('');
+  lockScroll();
   document.getElementById('add-sub-ov').classList.add('on');
 }
-function closeAddSubsc(){document.getElementById('add-sub-ov').classList.remove('on');}
+function closeAddSubsc(){unlockScroll();document.getElementById('add-sub-ov').classList.remove('on');}
 async function saveSubsc(){
   const name=document.getElementById('sub-name').value.trim();
   const icon=document.getElementById('sub-icon').value.trim()||'🔄';
@@ -1579,17 +1586,14 @@ if('serviceWorker' in navigator){
       if(swRefreshing)return;
       swRefreshing=true;
       window.location.reload();
-    });
+        });
   });
 }
 
-// ═════════════════════════════════════════════════════════
-//  INIT
-// ═════════════════════════════════════════════════════════
+// INIT
 window.addEventListener('load',()=>{
   document.getElementById('app').style.display='block';
   initDB();
-  // サービスワーカー切り替わり時に1回だけリロード
   setTimeout(()=>showLoadErr(),8000);
 });
 </script>

@@ -420,6 +420,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <div class="rtab on" id="rt-monthly" onclick="switchRTab('monthly')">月次</div>
         <div class="rtab" id="rt-annual" onclick="switchRTab('annual')">年間</div>
         <div class="rtab" id="rt-subsc" onclick="switchRTab('subsc')">サブスク</div>
+        <div class="rtab" id="rt-invest" onclick="switchRTab('invest')">投資</div>
       </div>
 
       <!-- Monthly -->
@@ -433,7 +434,6 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <div class="st2">カテゴリ別支出</div>
         <div class="txw" id="cat-rank"></div>
         <div class="card" style="margin-top:11px;"><div style="font-size:13px;font-weight:600;color:#111;margin-bottom:9px;">前月比</div><div id="cmp-body"></div></div>
-        <div class="card" style="margin-top:11px;"><div style="font-size:13px;font-weight:600;color:#111;margin-bottom:9px;">📈 投資・保険</div><div id="inv-body"></div></div>
         <div class="spacer"></div>
       </div>
 
@@ -472,6 +472,32 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <div class="st2">サブスク一覧</div>
         <div class="txw" id="sub-list"></div>
         <div style="padding:10px 13px;"><button style="width:100%;padding:10px;background:none;border:1px dashed #8b5cf6;border-radius:11px;font-size:12px;color:#8b5cf6;cursor:pointer;font-family:inherit;" onclick="openAddSubsc()">＋ サブスクを追加</button></div>
+        <div class="spacer"></div>
+      </div>
+
+      <!-- Investment -->
+      <div class="rcon" id="rc-invest">
+        <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:10px;background:#fff;margin-bottom:2px;">
+          <button class="nb sp" style="height:30px;width:30px;font-size:17px;border-radius:50%;padding:0;" onclick="chMo(-1);rInvest()">‹</button>
+          <span style="font-size:15px;font-weight:700;color:#111;" id="inv-mo-lbl">---</span>
+          <button class="nb sp" style="height:30px;width:30px;font-size:17px;border-radius:50%;padding:0;" onclick="chMo(1);rInvest()">›</button>
+        </div>
+        <div style="background:linear-gradient(135deg,#16a34a,#0d9488);border-radius:20px;padding:18px;margin:4px 13px 11px;color:#fff;box-shadow:0 4px 18px rgba(22,163,74,.3);">
+          <div class="shl">月間 支出合計（保険＋積立）</div>
+          <div class="sha" id="inv-total-disp">¥ 0</div>
+          <div class="shan" id="inv-income-disp">収益 ¥ 0</div>
+          <div style="display:flex;gap:20px;margin-top:12px;">
+            <div><div style="font-size:10px;opacity:.7;">🛡️ 保険</div><div style="font-size:13px;font-weight:600;" id="inv-ins-stat">---</div></div>
+            <div><div style="font-size:10px;opacity:.7;">📈 積立</div><div style="font-size:13px;font-weight:600;" id="inv-stk-stat">---</div></div>
+            <div><div style="font-size:10px;opacity:.7;">📊 収益</div><div style="font-size:13px;font-weight:600;" id="inv-inc-stat">---</div></div>
+          </div>
+        </div>
+        <div class="st2">🛡️ 保険</div>
+        <div class="txw" id="inv-ins-list" style="margin-bottom:11px;"></div>
+        <div class="st2">📈 株/NISA（積立）</div>
+        <div class="txw" id="inv-stk-list" style="margin-bottom:11px;"></div>
+        <div class="st2">📊 投資収益</div>
+        <div class="txw" id="inv-inc-list" style="margin-bottom:11px;"></div>
         <div class="spacer"></div>
       </div>
     </div>
@@ -855,6 +881,7 @@ function switchRTab(t){
   if(t==='monthly')rMonthly();
   if(t==='annual')rAnnual();
   if(t==='subsc')rSubsc();
+  if(t==='invest')rInvest();
 }
 function demo(t){
   if(t==='copy'){goTab('home');setTimeout(openCpModal,80);}
@@ -1111,18 +1138,6 @@ function rMonthly(){
   const curE=sE(txs)+subTotal; // サブスク込み
   const prevM=months[months.length-2];
   if(prevM){const prev=sE(mTx(prevM))+subTotal;const diff=curE-prev,sg=diff>=0?'▲':'▼',col=diff>=0?'#ef4444':'#22c55e';document.getElementById('cmp-body').innerHTML=`<div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">今月の支出</span><span style="font-size:14px;font-weight:700;color:#111;">${fmt(curE)}</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">先月の支出</span><span style="font-size:13px;color:#9ca3af;">${fmt(prev)}</span></div><div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #f3f4f6;margin-top:3px;"><span style="font-size:12px;color:#6b7280;">前月比</span><span style="font-size:14px;font-weight:700;color:${col};">${sg} ${fmt(Math.abs(diff))}</span></div>`;}
-  // 投資・保険内訳
-  const insureAmt=txs.filter(t=>t.category_id==='insurance').reduce((a,t)=>a+t.amount,0);
-  const investAmt=txs.filter(t=>t.category_id==='invest').reduce((a,t)=>a+t.amount,0);
-  const invIncAmt=txs.filter(t=>t.category_id==='inv_inc').reduce((a,t)=>a+t.amount,0);
-  const invNet=invIncAmt-(insureAmt+investAmt);
-  const invNetCol=invNet>=0?'#22c55e':'#ef4444';
-  const invNetSign=invNet>=0?'+':'';
-  document.getElementById('inv-body').innerHTML=
-    `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span style="font-size:12px;color:#6b7280;">🛡️ 保険（支出）</span><span style="font-size:14px;font-weight:600;color:#ef4444;">${insureAmt?'-'+fmt(insureAmt):'―'}</span></div>`+
-    `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span style="font-size:12px;color:#6b7280;">📈 株/NISA（積立）</span><span style="font-size:14px;font-weight:600;color:#ef4444;">${investAmt?'-'+fmt(investAmt):'―'}</span></div>`+
-    `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span style="font-size:12px;color:#6b7280;">📊 投資収益</span><span style="font-size:14px;font-weight:600;color:#22c55e;">${invIncAmt?'+'+fmt(invIncAmt):'―'}</span></div>`+
-    `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid #f3f4f6;margin-top:3px;"><span style="font-size:12px;color:#6b7280;">収支</span><span style="font-size:14px;font-weight:700;color:${invNetCol};">${invNetSign}${fmt(invNet)}</span></div>`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1196,6 +1211,39 @@ function rSubsc(){
   document.getElementById('sub-list').innerHTML=SUBS.length===0
     ? '<div style="padding:16px;text-align:center;font-size:12px;color:#9ca3af;">サブスクが登録されていません</div>'
     : SUBS.map(s=>{const c=gc(s.category_id);return`<div class="sub-row"><div class="suic" style="background:${s.color}20;">${s.icon}</div><div class="suin"><div class="sun">${s.name}</div><div class="sud">毎月${s.day}日 · ${c.name}</div></div><div class="suamt">-${fmt(s.amount)}</div><button onclick="deleteSubsc('${s.id}')" style="background:none;border:none;color:#ef4444;font-size:18px;padding:4px 8px;cursor:pointer;flex-shrink:0;">🗑</button></div>`;}).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  REPORT — Investment
+// ═══════════════════════════════════════════════════════
+function rInvest(){
+  const months=getReportMonths();
+  const curYM=months[months.length-1];
+  const [y,m]=curYM.split('-');
+  document.getElementById('inv-mo-lbl').textContent=`${y}年${parseInt(m)}月`;
+  const txs=mTx(curYM);
+  const insTxs=txs.filter(t=>t.category_id==='insurance');
+  const stkTxs=txs.filter(t=>t.category_id==='invest');
+  const incTxs=txs.filter(t=>t.category_id==='inv_inc');
+  const insAmt=insTxs.reduce((a,t)=>a+t.amount,0);
+  const stkAmt=stkTxs.reduce((a,t)=>a+t.amount,0);
+  const incAmt=incTxs.reduce((a,t)=>a+t.amount,0);
+  const expTotal=insAmt+stkAmt;
+  document.getElementById('inv-total-disp').textContent=fmt(expTotal);
+  document.getElementById('inv-income-disp').textContent='収益 '+fmt(incAmt);
+  document.getElementById('inv-ins-stat').textContent=insAmt?fmt(insAmt):'―';
+  document.getElementById('inv-stk-stat').textContent=stkAmt?fmt(stkAmt):'―';
+  document.getElementById('inv-inc-stat').textContent=incAmt?'+'+fmt(incAmt):'―';
+  const noTx='<div style="padding:12px;text-align:center;font-size:12px;color:#9ca3af;">この月のデータはありません</div>';
+  document.getElementById('inv-ins-list').innerHTML=insTxs.length
+    ?insTxs.map(t=>{const c=gc(t.category_id);return`<div class="sub-row" onclick="editTx('${t.id}')" style="cursor:pointer;"><div class="suic" style="background:${c.color}1a;">${c.icon}</div><div class="suin"><div class="sun">${t.memo||c.name}</div><div class="sud">${t.date.slice(5).replace('-','/')} · ${c.name}</div></div><div class="suamt" style="color:#ef4444;">-${fmt(t.amount)}</div></div>`;}).join('')
+    :noTx;
+  document.getElementById('inv-stk-list').innerHTML=stkTxs.length
+    ?stkTxs.map(t=>{const c=gc(t.category_id);return`<div class="sub-row" onclick="editTx('${t.id}')" style="cursor:pointer;"><div class="suic" style="background:${c.color}1a;">${c.icon}</div><div class="suin"><div class="sun">${t.memo||c.name}</div><div class="sud">${t.date.slice(5).replace('-','/')} · ${c.name}</div></div><div class="suamt" style="color:#ef4444;">-${fmt(t.amount)}</div></div>`;}).join('')
+    :noTx;
+  document.getElementById('inv-inc-list').innerHTML=incTxs.length
+    ?incTxs.map(t=>{const c=gc(t.category_id);return`<div class="sub-row" onclick="editTx('${t.id}')" style="cursor:pointer;"><div class="suic" style="background:${c.color}1a;">${c.icon}</div><div class="suin"><div class="sun">${t.memo||c.name}</div><div class="sud">${t.date.slice(5).replace('-','/')} · ${c.name}</div></div><div class="suamt" style="color:#22c55e;">+${fmt(t.amount)}</div></div>`;}).join('')
+    :noTx;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1525,69 +1573,6 @@ async function confirmClear(){
   await db.subscriptions.clear();
   TXS=[];SUBS=[];refreshPrevMo();rHome();if(S.tab==='cal')rCal();if(S.reportTab==='subsc')rSubsc();
   toast('🗑 データを削除しました');
-}
-
-// ── サブスク管理 ─────────────────────────────────────────
-function openAddSubsc(){
-  S.subColor=COLORS[0];S.subCatId='subsc';
-  document.getElementById('sub-name').value='';
-  document.getElementById('sub-icon').value='';
-  document.getElementById('sub-amount').value='';
-  document.getElementById('sub-day').value='';
-  // カテゴリグリッド（支出のみ）
-  document.getElementById('sub-c-grid').innerHTML=aC().filter(c=>c.type==='expense').map(c=>`<button class="cbtn ${S.subCatId===c.id?'on':''}" onclick="S.subCatId='${c.id}';document.querySelectorAll('#sub-c-grid .cbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')"><span class="ci">${c.icon}</span><span class="cn">${c.name}</span></button>`).join('');
-  // カラーグリッド
-  document.getElementById('sub-color-grid').innerHTML=COLORS.map(c=>`<div class="clrc ${S.subColor===c?'on':''}" style="background:${c}" onclick="S.subColor='${c}';document.querySelectorAll('#sub-color-grid .clrc').forEach(b=>b.classList.remove('on'));this.classList.add('on')"></div>`).join('');
-  lockScroll();
-  document.getElementById('add-sub-ov').classList.add('on');
-}
-function closeAddSubsc(){unlockScroll();document.getElementById('add-sub-ov').classList.remove('on');}
-async function saveSubsc(){
-  const name=document.getElementById('sub-name').value.trim();
-  const icon=document.getElementById('sub-icon').value.trim()||'🔄';
-  const amount=parseInt(document.getElementById('sub-amount').value)||0;
-  const day=parseInt(document.getElementById('sub-day').value)||1;
-  if(!name){toast('サービス名を入力してください');return;}
-  if(amount<=0){toast('金額を入力してください');return;}
-  if(day<1||day>31){toast('引き落とし日は1〜31で入力してください');return;}
-  const sub={id:uid(),name,icon,amount,category_id:S.subCatId,day,color:S.subColor};
-  await db.subscriptions.add(sub);
-  SUBS.push(sub);
-  closeAddSubsc();
-  rSubsc();rHome();
-  toast('✅ サブスクを追加しました');
-}
-async function deleteSubsc(id){
-  if(!confirm('このサブスクを削除しますか？'))return;
-  await db.subscriptions.delete(id);
-  SUBS=SUBS.filter(s=>s.id!==id);
-  rSubsc();rHome();
-  toast('🗑 削除しました');
-}
-// ─────────────────────────────────────────────────────────
-
-// ═══════════════════════════════════════════════════════
-//  iOS INSTALL BANNER
-// ═══════════════════════════════════════════════════════
-function checkInstallBanner(){
-  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone=window.navigator.standalone;
-  const dismissed=localStorage.getItem('inst_dismissed');
-  if(isIOS&&!isStandalone&&!dismissed){
-    setTimeout(()=>document.getElementById('inst-banner').classList.add('show'),2000);
-  }
-}
-function dismissInstall(){
-  document.getElementById('inst-banner').classList.remove('show');
-  localStorage.setItem('inst_dismissed','1');
-}
-function showInstallGuide(){
-  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
-  if(isIOS){
-    document.getElementById('inst-banner').classList.add('show');
-  }else{
-    toast('iPhoneのSafariで開き「ホーム画面に追加」でインストールできます');
-  }
 }
 
 // ═══════════════════════════════════════════════════════════

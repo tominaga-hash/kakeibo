@@ -1774,7 +1774,8 @@ async function loadJson(input){
   input.value='';
 }
 async function confirmClear(){
-  if(!confirm('全データを削除します。この操作は取り消せません。よろしいですか？'))return;
+  if(!confirm('⚠️ 全データを削除します。\nこの操作は取り消せません。\nよろしいですか？'))return;
+  if(!confirm('本当に削除しますか？\n取引・サブスク・カスタムカテゴリが\nすべて消えます。'))return;
   await db.transactions.clear();
   await db.subscriptions.clear();
   TXS=[];SUBS=[];refreshPrevMo();rHome();if(S.tab==='cal')rCal();if(S.reportTab==='subsc')rSubsc();

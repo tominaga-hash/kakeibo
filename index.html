@@ -1491,6 +1491,20 @@ async function execCopy(){
 function closeCpModal(){unlockScroll();document.getElementById('cp-ov').classList.remove('on');}
 function cpOvClose(e){if(e.target===document.getElementById('cp-ov'))closeCpModal();}
 // =======================================================
+//  CLOCK
+// =======================================================
+function initClock(){
+  function tick(){
+    const d=new Date();
+    const hh=String(d.getHours()).padStart(2,'0');
+    const mm=String(d.getMinutes()).padStart(2,'0');
+    const el=document.getElementById('clk');
+    if(el)el.textContent=hh+':'+mm;
+  }
+  tick();
+  setInterval(tick,10000);
+}
+// =======================================================
 //  TOAST
 // =======================================================
 let tT;

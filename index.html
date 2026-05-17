@@ -1646,7 +1646,22 @@ function checkInstallBanner(){
 async function doExp(){
   const data=JSON.stringify({version:'1.0',exportedAt:new Date().toISOString(),budget:BUDGET,customCategories:CC,subscriptions:SUBS,transactions:TXS},null,2);
   const fname='kakeibo-backup.json';
-  showBackupModal(data,fname);
+  const blob=new Blob([data],{type:'application/json'});
+  try{
+    const file=new File([blob],fname,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'家計簿バックアップ'});
+      toast('📦 バックアップを共有しました ✓');
+      return;
+    }
+  }catch(e){if(e.name==='AbortError')return;}
+  // フォールバック：ダウンロード
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=fname;a.style.display='none';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},500);
+  toast('📦 バックアップを保存しました ✓');
 }
 function showBackupModal(data,fname){
   const ex=document.getElementById('backup-modal');if(ex)ex.remove();

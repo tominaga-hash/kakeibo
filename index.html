@@ -554,7 +554,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
     </div>
 
     <!-- ── Input Overlay ── -->
-    <div class="ov" id="input-ov" onclick="ovClose('input-ov')">
+    <div class="ov" id="input-ov" onclick="closeSheet()">
       <div class="sh" onclick="event.stopPropagation()">
         <div class="shdl"></div>
         <div id="edit-badge" class="edit-badge" style="display:none;">✏️ 取引を編集中</div>
@@ -663,7 +663,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
     <div class="inst-banner" id="inst-banner">
       <button class="inst-close" onclick="dismissInstall()">×</button>
       <strong>📱 ホーム画面に追加</strong><br>
-      SafariのメニューでSafariのメニューから「ホーム画面に追加」をタップするとアプリとして使えます。
+      Safariのメニューから「ホーム画面に追加」をタップするとアプリとして使えます。
     </div>
 
     <div class="toast" id="tk"></div>
@@ -1114,7 +1114,7 @@ function showDayPanel(d){
   document.getElementById('day-panel-date').textContent=`${m}月${d}日`;
   document.getElementById('day-panel-total').textContent=totalExp>0?`支出 ${fmt(totalExp)}${inc?' / 収入 '+fmt(inc):''}`:inc>0?`収入 ${fmt(inc)}`:'0件';
   document.getElementById('day-panel').style.display='block';
-  const subHTML=subs.map(s=>`<div class="txi"><span class="txa" style="background:${s.color||'#8b5cf6'}20;color:${s.color||'#8b5cf6'};border-radius:8px;padding:6px 8px;font-size:18px;">${s.icon||'🔄'}</span><div class="txb"><div class="txn">${s.name} <span style="font-size:10px;color:#8b5cf6;background:#f3f0ff;padding:1px 5px;border-radius:4px;">サブスク</span></div><div class="txd">${gc(s.category_id).name}</div></div><div class="txam" style="color:#ef4444;">${fmt(s.amount)}</div></div>`).join('');
+  const subHTML=subs.map(s=>`<div class="txi"><div class="txic" style="background:${(s.color||'#8b5cf6')}1a;">${s.icon||'🔄'}</div><div class="txin"><div class="txn">${s.name} <span style="font-size:10px;color:#8b5cf6;background:#f3f0ff;padding:1px 5px;border-radius:4px;">サブスク</span></div><div class="txd">${gc(s.category_id).name}</div></div><div class="txa exp">-${fmt(s.amount)}</div></div>`).join('');
   document.getElementById('day-tx-list').innerHTML=(txs.length?txs.map(t=>txHTML(t,true,true)).join(''):'')+(subHTML||(!txs.length?'<div class="no-tx">この日の取引はありません</div>':''));
 }
 
@@ -1491,28 +1491,211 @@ async function execCopy(){
 function closeCpModal(){unlockScroll();document.getElementById('cp-ov').classList.remove('on');}
 function cpOvClose(e){if(e.target===document.getElementById('cp-ov'))closeCpModal();}
 // =======================================================
+//  TOAST
+// =======================================================
+let tT;
+function toast(msg){
+  const el=document.getElementById('tk');
+  el.textContent=msg;el.classList.add('on');
+  clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('on'),2800);
+}
+
+// =======================================================
+//  SETTINGS
+// =======================================================
+function updCatCnt(){document.getElementById('cat-cnt').textContent=aC().length+'件';}
+function updBudgetSv(){document.getElementById('budget-sv').textContent=fmt(BUDGET);}
+function editBudget(){
+  const v=prompt('月次予算を入力（円）',BUDGET);
+  if(v===null)return;
+  const n=parseInt(v.replace(/,/g,''));
+  if(!n||n<=0){toast('正しい金額を入力してください');return;}
+  BUDGET=n;dbSaveSetting('budget',n);updBudgetSv();rHome();
+  toast('予算を更新しました ✓');
+}
+
+// =======================================================
+//  CATEGORY MANAGER
+// =======================================================
+function openCatMgr(){
+  lockScroll();
+  document.getElementById('cat-fo').classList.add('on');
+  rCatList();
+}
+function closeCatMgr(){
+  unlockScroll();
+  document.getElementById('cat-fo').classList.remove('on');
+}
+function rCatList(){
+  function row(c){
+    const del=c.is_custom?`<button onclick="delCat('${c.id}')" style="background:none;border:none;color:#ef4444;font-size:18px;padding:4px 8px;cursor:pointer;">🗑</button>`:'';
+    return`<div class="sub-row"><div class="suic" style="background:${c.color}20;">${c.icon}</div><div class="suin"><div class="sun">${c.name}</div><div class="sud">${c.type==='expense'?'支出':'収入'}</div></div>${del}</div>`;
+  }
+  const all=aC();
+  document.getElementById('exp-cl').innerHTML=all.filter(c=>c.type==='expense').map(row).join('')||'<div style="padding:12px;text-align:center;font-size:12px;color:#9ca3af;">なし</div>';
+  document.getElementById('inc-cl').innerHTML=all.filter(c=>c.type==='income').map(row).join('')||'<div style="padding:12px;text-align:center;font-size:12px;color:#9ca3af;">なし</div>';
+}
+
+// =======================================================
+//  ADD CATEGORY
+// =======================================================
+function rColorGrid(gridId,selected,prefix){
+  document.getElementById(gridId).innerHTML=COLORS.map(col=>`<div onclick="pickColor('${col}','${gridId}','${prefix}')" style="width:28px;height:28px;border-radius:50%;background:${col};cursor:pointer;border:3px solid ${col===selected?'#111':'transparent'};box-sizing:border-box;flex-shrink:0;"></div>`).join('');
+}
+function pickColor(col,gridId,prefix){
+  if(prefix==='cat')S.newCatColor=col;
+  else S.newSubColor=col;
+  rColorGrid(gridId,col,prefix);
+}
+function setNcType(t){
+  S.newCatType=t;
+  document.getElementById('nc-exp').classList.toggle('on',t==='expense');
+  document.getElementById('nc-inc').classList.toggle('on',t==='income');
+}
+function openAddCat(){
+  lockScroll();
+  S.newCatType='expense';S.newCatColor=COLORS[0];
+  document.getElementById('nc-name').value='';
+  document.getElementById('nc-icon').value='';
+  document.getElementById('nc-exp').classList.add('on');
+  document.getElementById('nc-inc').classList.remove('on');
+  rColorGrid('color-grid',S.newCatColor,'cat');
+  document.getElementById('add-cat-ov').classList.add('on');
+}
+function closeAddCat(){
+  unlockScroll();
+  document.getElementById('add-cat-ov').classList.remove('on');
+}
+function acOvClose(e){if(e.target===document.getElementById('add-cat-ov'))closeAddCat();}
+async function addCat(){
+  const name=document.getElementById('nc-name').value.trim();
+  const icon=document.getElementById('nc-icon').value.trim()||'📌';
+  if(!name){toast('カテゴリ名を入力してください');return;}
+  if(aC().find(c=>c.name===name&&c.type===S.newCatType)){toast('同じ名前が既にあります');return;}
+  const cat={id:'c_'+uid(),name,icon,color:S.newCatColor||COLORS[5],type:S.newCatType,is_custom:true};
+  CC.push(cat);await db.customCats.put(cat);
+  closeAddCat();rCatList();updCatCnt();
+  toast('カテゴリを追加しました ✓');
+}
+async function delCat(id){
+  if(!confirm('このカテゴリを削除しますか？'))return;
+  CC=CC.filter(c=>c.id!==id);await db.customCats.delete(id);
+  rCatList();updCatCnt();toast('削除しました');
+}
+
+// =======================================================
+//  ADD SUBSCRIPTION
+// =======================================================
+function rSubCatGrid(){
+  const cats=aC().filter(c=>c.type==='expense');
+  document.getElementById('sub-c-grid').innerHTML=cats.map(c=>`<button class="cbtn ${c.id===S.catId?'on':''}" onclick="pickSubCat('${c.id}')"><span class="ci">${c.icon}</span><span class="cn">${c.name}</span></button>`).join('');
+}
+function pickSubCat(id){S.catId=id;rSubCatGrid();}
+function openAddSubsc(){
+  lockScroll();
+  S.newSubColor=COLORS[6];S.catId='subsc';
+  document.getElementById('sub-name').value='';
+  document.getElementById('sub-icon').value='';
+  document.getElementById('sub-amount').value='';
+  document.getElementById('sub-day').value='';
+  rSubCatGrid();
+  rColorGrid('sub-color-grid',S.newSubColor,'sub');
+  document.getElementById('add-sub-ov').classList.add('on');
+}
+function closeAddSubsc(){
+  unlockScroll();
+  document.getElementById('add-sub-ov').classList.remove('on');
+}
+async function saveSubsc(){
+  const name=document.getElementById('sub-name').value.trim();
+  const icon=document.getElementById('sub-icon').value.trim()||'🔄';
+  const amount=parseInt(document.getElementById('sub-amount').value);
+  const day=parseInt(document.getElementById('sub-day').value);
+  if(!name){toast('サービス名を入力してください');return;}
+  if(!amount||amount<=0){toast('金額を入力してください');return;}
+  if(!day||day<1||day>31){toast('引き落とし日を1～31で入力してください');return;}
+  const sub={id:'s_'+uid(),name,icon,amount,day,category_id:S.catId||'subsc',color:S.newSubColor||COLORS[6]};
+  await db.subscriptions.add(sub);SUBS.push(sub);
+  closeAddSubsc();rSubsc();rHome();
+  toast('サブスクを追加しました ✓');
+}
+async function deleteSubsc(id){
+  if(!confirm('このサブスクを削除しますか？'))return;
+  await db.subscriptions.delete(id);SUBS=SUBS.filter(s=>s.id!==id);
+  rSubsc();rHome();toast('削除しました');
+}
+
+// =======================================================
+//  INSTALL GUIDE
+// =======================================================
+function showInstallGuide(){document.getElementById('inst-banner').classList.add('show');}
+function dismissInstall(){document.getElementById('inst-banner').classList.remove('show');sessionStorage.setItem('inst_dismissed','1');}
+function checkInstallBanner(){
+  try{
+    const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent||'');
+    const isStandalone=window.matchMedia('(display-mode: standalone)').matches||(navigator.standalone===true);
+    if(isIOS&&!isStandalone&&!sessionStorage.getItem('inst_dismissed')){
+      setTimeout(()=>showInstallGuide(),4000);
+    }
+  }catch(e){}
+}
+
+// =======================================================
 //  DATA EXPORT / IMPORT
 // =======================================================
 async function doExp(){
   const data=JSON.stringify({version:'1.0',exportedAt:new Date().toISOString(),budget:BUDGET,customCategories:CC,subscriptions:SUBS,transactions:TXS},null,2);
-  const blob=new Blob([data],{type:'application/json'});
   const fname='kakeibo-backup.json';
-  if(navigator.canShare){
-    try{
-      const file=new File([blob],fname,{type:'application/json'});
-      if(navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title:'家識簿バックアップ',text:fname});
-        toast('📦 共有しました ✓');
-        return;
-      }
-    }catch(e){if(e.name==='AbortError')return;}
-  }
+  showBackupModal(data,fname);
+}
+function showBackupModal(data,fname){
+  const ex=document.getElementById('backup-modal');if(ex)ex.remove();
+  const preview=data.substring(0,280).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const el=document.createElement('div');
+  el.id='backup-modal';
+  el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;';
+  el.innerHTML=`<div style="background:#1c1c1e;border-radius:20px 20px 0 0;width:100%;padding:20px 20px max(20px,env(safe-area-inset-bottom));">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <span style="color:#fff;font-size:17px;font-weight:600;">📦 JSONバックアップ</span>
+      <button onclick="document.getElementById('backup-modal').remove()" style="background:none;border:none;color:#8e8e93;font-size:22px;line-height:1;cursor:pointer;">✕</button>
+    </div>
+    <div style="background:#2c2c2e;border-radius:10px;padding:10px 12px;margin-bottom:12px;max-height:110px;overflow-y:auto;">
+      <code style="color:#30d158;font-size:10px;white-space:pre;font-family:monospace;">${preview}…</code>
+    </div>
+    <p style="color:#8e8e93;font-size:13px;margin:0 0 14px;text-align:center;">📱 iPhoneの場合：「共有/保存」→「ファイルに保存」をタップ</p>
+    <div style="display:flex;gap:10px;">
+      <button id="bk-copy-btn" onclick="bkCopy()" style="flex:1;padding:14px;border-radius:12px;border:none;background:#3a3a3c;color:#fff;font-size:15px;cursor:pointer;">📋 コピー</button>
+      <button onclick="bkShare('${fname}')" style="flex:2;padding:14px;border-radius:12px;border:none;background:#0a84ff;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">📤 共有 / 保存</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  window._bkData=data;
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+}
+async function bkCopy(){
+  try{
+    await navigator.clipboard.writeText(window._bkData||'');
+    const btn=document.getElementById('bk-copy-btn');
+    if(btn){btn.textContent='✅ コピー済み';setTimeout(()=>{if(btn)btn.textContent='📋 コピー';},2000);}
+  }catch(e){toast('コピーに失敗しました');}
+}
+async function bkShare(fname){
+  const data=window._bkData||'';
+  const blob=new Blob([data],{type:'application/json'});
+  try{
+    const file=new File([blob],fname,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'家計簿バックアップ'});
+      document.getElementById('backup-modal')?.remove();
+      toast('📦 保存しました ✓');return;
+    }
+  }catch(e){if(e.name==='AbortError')return;}
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;a.download=fname;a.style.display='none';
   document.body.appendChild(a);a.click();
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},500);
-  toast('📦 JSONバックアップを出力しました ✓');
+  toast('📦 ダウンロードしました ✓');
 }
 async function doCsv(){
   const rows=[['日付','種別','カテゴリ','金額','メモ']];
@@ -1552,7 +1735,7 @@ async function loadJson(input){
     if(d.customCategories&&Array.isArray(d.customCategories)){
       const newCats=d.customCategories.filter(c=>!CC.find(e=>e.id===c.id));
       CC.push(...newCats);
-      for(const cat of newCats)await db.categories.put(cat);
+      for(const cat of newCats)await db.customCats.put(cat);
     }
     if(newTxs.length)await db.transactions.bulkAdd(newTxs);TXS.push(...newTxs);
     if(newSubs.length)await db.subscriptions.bulkAdd(newSubs);SUBS.push(...newSubs);

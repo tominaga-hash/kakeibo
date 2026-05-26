@@ -1,9 +1,6 @@
-$folder = "C:\Users\tominaga\Documents\Claude\Projects\家計簿アプリ"
-Set-Location $folder
+Set-Location $PSScriptRoot
 
 $git = "C:\Users\tominaga\AppData\Local\GitHubDesktop\app-3.5.10\resources\app\git\cmd\git.exe"
-
-Write-Host "git: $git"
 
 if (-not (Test-Path ".git")) {
     Write-Host "First time setup..."

@@ -585,9 +585,9 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <input type="text" id="m-inp" class="mi" placeholder="例）家賃・電気代・スーパー等" maxlength="28"/>
         <div class="seg" style="margin:0 13px 10px;"><button class="sbtn on" id="s-exp" onclick="setType('expense')">支出</button><button class="sbtn" id="s-inc" onclick="setType('income')">収入</button></div>
         <div class="amt-fld" id="amt-preview" onclick="openNp()">¥ 0</div>
+        <button class="svbtn" id="save-btn" onclick="saveTx()">保存する</button>
         <div class="slbl" id="c-sec-lbl">カテゴリ（支出）</div>
         <div class="cgrid" id="c-grid"></div>
-        <button class="svbtn" id="save-btn" onclick="saveTx()">保存する</button>
         <button class="rcbt" id="rcbt" onclick="triggerReceiptScan()">📸 レシートから読み取る</button>
         <input type="file" id="receipt-input" accept="image/*" capture="environment" style="display:none;" onchange="handleReceiptImage(this)"/>
       </div>

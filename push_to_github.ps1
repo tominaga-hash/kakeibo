@@ -2,6 +2,11 @@ Set-Location $PSScriptRoot
 
 $git = "C:\Users\tominaga\AppData\Local\GitHubDesktop\app-3.5.10\resources\app\git\cmd\git.exe"
 
+# Windowsの認証ダイアログを無効化
+$env:GIT_ASKPASS = "echo"
+$env:GIT_TERMINAL_PROMPT = "0"
+& $git config credential.helper ""
+
 if (-not (Test-Path ".git")) {
     Write-Host "First time setup..."
     & $git init

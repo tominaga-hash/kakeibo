@@ -2,7 +2,7 @@
    家計簿 Service Worker  v2.0
    オフライン対応 + キャッシュ戦略
 ───────────────────────────────────────────── */
-const CACHE_NAME = 'kakeibo-v36';
+const CACHE_NAME = 'kakeibo-v37';
 
 // キャッシュするアセット（アプリシェル）
 const SHELL_ASSETS = [

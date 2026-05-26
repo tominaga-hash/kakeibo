@@ -898,7 +898,7 @@ function goTab(t){
   const tb=document.getElementById('tab-'+t);if(tb)tb.classList.add('on');
   S.tab=t;
   if(t==='home')rHome();
-  if(t==='cal'){rCal();requestAnimationFrame(()=>requestAnimationFrame(()=>{const sc=document.getElementById('cal-scroll');if(sc)sc.scrollTop=0;}));}
+  if(t==='cal'){S._calTopReset=true;rCal();const _sc=document.getElementById('cal-scroll');if(_sc)_sc.scrollTop=0;requestAnimationFrame(()=>{const sc2=document.getElementById('cal-scroll');if(sc2)sc2.scrollTop=0;S._calTopReset=false;});}
   if(t==='rep')switchRTab(S.reportTab);
   if(t==='set'){updCatCnt();updBudgetSv();}
 }
@@ -1077,7 +1077,8 @@ function showMonthPanel(){
   if(!txs.length&&!subs.length){
     document.getElementById('mo-tx-list').innerHTML='<div style="padding:18px;text-align:center;font-size:12px;color:#9ca3af;">この月の取引はありません</div>';
     document.getElementById('month-panel').style.display='block';
-    requestAnimationFrame(()=>{const cs=document.getElementById('cal-scroll');const mp=document.getElementById('month-panel');if(cs&&mp)cs.scrollTop=mp.offsetTop-8;});
+    const _topReset0=S._calTopReset;
+    requestAnimationFrame(()=>{const cs=document.getElementById('cal-scroll');const mp=document.getElementById('month-panel');if(cs&&mp)cs.scrollTop=_topReset0?0:(mp.offsetTop-8);});
     return;
   }
   // 日付でグループ化（取引＋サブスク）
@@ -1106,11 +1107,12 @@ function showMonthPanel(){
   document.getElementById('month-panel').style.display='block';
   // カレンダーの日付選択を解除して再描画
   document.querySelectorAll('.cc.sel').forEach(el=>el.classList.remove('sel'));
-  // 月パネルが見えるようにスクロール
+  // 月パネルが見えるようにスクロール（タブ切替時は最上部に戻す）
+  const _topReset=S._calTopReset;
   requestAnimationFrame(()=>{
     const cs=document.getElementById('cal-scroll');
     const mp=document.getElementById('month-panel');
-    if(cs&&mp)cs.scrollTop=mp.offsetTop-8;
+    if(cs&&mp)cs.scrollTop=_topReset?0:(mp.offsetTop-8);
   });
 }
 function showDayPanel(d){

@@ -1086,7 +1086,7 @@ function showMonthPanel(autoScroll=true){
   if(!txs.length&&!subs.length){
     document.getElementById('mo-tx-list').innerHTML='<div style="padding:18px;text-align:center;font-size:12px;color:#9ca3af;">この月の取引はありません</div>';
     document.getElementById('month-panel').style.display='block';
-    if(autoScroll)requestAnimationFrame(()=>{const cs=document.getElementById('cal-scroll');const mp=document.getElementById('month-panel');if(cs&&mp)cs.scrollTop=mp.offsetTop-8;});
+    if(autoScroll)requestAnimationFrame(()=>{const cs=document.getElementById('cal-scroll');const mp=document.getElementById('month-panel');if(cs&&mp){const cr=cs.getBoundingClientRect();const mr=mp.getBoundingClientRect();cs.scrollTop+=mr.top-cr.top-8;}});
     return;
   }
   // 日付でグループ化（取引＋サブスク）
@@ -1119,7 +1119,7 @@ function showMonthPanel(autoScroll=true){
   if(autoScroll)requestAnimationFrame(()=>{
     const cs=document.getElementById('cal-scroll');
     const mp=document.getElementById('month-panel');
-    if(cs&&mp)cs.scrollTop=mp.offsetTop-8;
+    if(cs&&mp){const cr=cs.getBoundingClientRect();const mr=mp.getBoundingClientRect();cs.scrollTop+=mr.top-cr.top-8;}
   });
 }
 function showDayPanel(d){

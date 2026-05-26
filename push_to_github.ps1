@@ -1,8 +1,7 @@
 Set-Location $PSScriptRoot
 
 $git = "C:\Users\tominaga\AppData\Local\GitHubDesktop\app-3.5.10\resources\app\git\cmd\git.exe"
-$token = "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"
-$remote = "https://$token@github.com/tominaga-hash/kakeibo.git"
+$remote = "https://tominaga-hash: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@github.com/tominaga-hash/kakeibo.git"
 
 $env:GCM_INTERACTIVE = "never"
 $env:GIT_TERMINAL_PROMPT = "0"

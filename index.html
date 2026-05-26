@@ -898,7 +898,7 @@ function goTab(t){
   const tb=document.getElementById('tab-'+t);if(tb)tb.classList.add('on');
   S.tab=t;
   if(t==='home')rHome();
-  if(t==='cal'){const sc=document.getElementById('cal-scroll');if(sc)sc.scrollTop=0;rCal();}
+  if(t==='cal'){rCal();requestAnimationFrame(()=>requestAnimationFrame(()=>{const sc=document.getElementById('cal-scroll');if(sc)sc.scrollTop=0;}));}
   if(t==='rep')switchRTab(S.reportTab);
   if(t==='set'){updCatCnt();updBudgetSv();}
 }

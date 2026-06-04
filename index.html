@@ -527,6 +527,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
           <div class="shl">月間 支出合計（保険＋積立）</div>
           <div class="sha" id="inv-total-disp">¥ 0</div>
           <div class="shan" id="inv-income-disp">収益 ¥ 0</div>
+          <div class="shan" id="inv-yr-disp" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.25);">年間投資額 ¥ 0</div>
           <div style="display:flex;gap:20px;margin-top:12px;">
             <div><div style="font-size:10px;opacity:.7;">🛡️ 保険</div><div style="font-size:13px;font-weight:600;" id="inv-ins-stat">---</div></div>
             <div><div style="font-size:10px;opacity:.7;">📈 積立</div><div style="font-size:13px;font-weight:600;" id="inv-stk-stat">---</div></div>
@@ -1315,6 +1316,10 @@ function rInvest(){
   const expTotal=insAmt+stkAmt;
   document.getElementById('inv-total-disp').textContent=fmt(expTotal);
   document.getElementById('inv-income-disp').textContent='収益 '+fmt(incAmt);
+  // 年間（暦年1〜12月）の総投資額と総収益
+  const yrInv=TXS.filter(t=>(t.category_id==='insurance'||t.category_id==='invest')&&t.date.startsWith(y+'-')).reduce((a,t)=>a+t.amount,0);
+  const yrInc=TXS.filter(t=>t.category_id==='inv_inc'&&t.date.startsWith(y+'-')).reduce((a,t)=>a+t.amount,0);
+  document.getElementById('inv-yr-disp').textContent=`${y}年 総投資額 ${fmt(yrInv)} ／ 総収益 ${fmt(yrInc)}`;
   document.getElementById('inv-ins-stat').textContent=insAmt?fmt(insAmt):'―';
   document.getElementById('inv-stk-stat').textContent=stkAmt?fmt(stkAmt):'―';
   document.getElementById('inv-inc-stat').textContent=incAmt?'+'+fmt(incAmt):'―';

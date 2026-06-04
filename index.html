@@ -558,7 +558,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
             <div><div style="font-size:10px;opacity:.7;">⚖️ 収支（ふるさと納税除く）</div><div style="font-size:13px;font-weight:600;" id="fur-bal-stat">---</div></div>
           </div>
         </div>
-        <div class="st2">📅 月別利用額</div>
+        <div class="st2">📅 月別利用額と収支</div>
         <div class="txw" id="fur-month-tbl" style="margin-bottom:11px;"></div>
         <div class="st2">🍑 今月の明細</div>
         <div class="txw" id="fur-list" style="margin-bottom:11px;"></div>
@@ -1352,15 +1352,22 @@ function rFurusato(){
   document.getElementById('fur-yr-disp').textContent=`${y}年合計（1〜12月） ${fmt(yearTotal)}`;
   document.getElementById('fur-exp-stat').textContent=fmt(expEx);
   document.getElementById('fur-bal-stat').textContent=(balEx>=0?'+':'-')+fmt(Math.abs(balEx)).replace('¥ ','¥');
-  // 月別利用額テーブル（1〜12月＋合計）
-  let rows='';
+  // 月別利用額テーブル（1〜12月＋合計）— 各月の収支（ふるさと納税除く）も表示
+  let rows=`<div class="sub-row" style="padding:6px 13px;background:#fafaf9;"><div style="width:42px;font-size:10px;font-weight:600;color:#9ca3af;">月</div><div style="flex:1;text-align:right;font-size:10px;font-weight:600;color:#9ca3af;">利用額</div><div style="width:92px;text-align:right;font-size:10px;font-weight:600;color:#9ca3af;">収支（除く）</div></div>`;
+  let yearBal=0;
   for(let i=1;i<=12;i++){
-    const ym=`${y}-${String(i).padStart(2,'0')}`;
-    const amt=TXS.filter(t=>t.category_id==='furusato'&&t.date.startsWith(ym)).reduce((a,t)=>a+t.amount,0);
-    const cur=ym===curYM;
-    rows+=`<div class="sub-row" style="${cur?'background:#fff7ed;':''}padding:7px 13px;"><div style="width:42px;font-size:12px;font-weight:${cur?'700':'600'};color:${cur?'#ea580c':'#6b7280'};">${i}月</div><div style="flex:1;"></div><div style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:${amt?'#111':'#d1d5db'};">${amt?fmt(amt):'―'}</div></div>`;
+    const ym2=`${y}-${String(i).padStart(2,'0')}`;
+    const mtxs=mTx(ym2);
+    const amt=mtxs.filter(t=>t.category_id==='furusato').reduce((a,t)=>a+t.amount,0);
+    const mBalEx=sI(mtxs)-(sE(mtxs)-amt);
+    const hasTx=mtxs.length>0;
+    if(hasTx)yearBal+=mBalEx;
+    const cur=ym2===curYM;
+    const balStr=hasTx?(mBalEx>=0?'+':'-')+fmt(Math.abs(mBalEx)).replace('¥ ','¥'):'―';
+    const balCol=hasTx?(mBalEx>=0?'#16a34a':'#ef4444'):'#d1d5db';
+    rows+=`<div class="sub-row" style="${cur?'background:#fff7ed;':''}padding:7px 13px;"><div style="width:42px;font-size:12px;font-weight:${cur?'700':'600'};color:${cur?'#ea580c':'#6b7280'};">${i}月</div><div style="flex:1;text-align:right;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:${amt?'#111':'#d1d5db'};">${amt?fmt(amt):'―'}</div><div style="width:92px;text-align:right;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:${balCol};">${balStr}</div></div>`;
   }
-  rows+=`<div class="sub-row" style="background:#ffedd5;padding:8px 13px;"><div style="font-size:12px;font-weight:700;color:#9a3412;">年間合計</div><div style="flex:1;"></div><div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:#ea580c;">${fmt(yearTotal)}</div></div>`;
+  rows+=`<div class="sub-row" style="background:#ffedd5;padding:8px 13px;"><div style="width:42px;font-size:12px;font-weight:700;color:#9a3412;">合計</div><div style="flex:1;text-align:right;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:#ea580c;">${fmt(yearTotal)}</div><div style="width:92px;text-align:right;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:${yearBal>=0?'#16a34a':'#ef4444'};">${(yearBal>=0?'+':'-')+fmt(Math.abs(yearBal)).replace('¥ ','¥')}</div></div>`;
   document.getElementById('fur-month-tbl').innerHTML=rows;
   // 今月の明細
   const noTx='<div style="padding:12px;text-align:center;font-size:12px;color:#9ca3af;">この月のデータはありません</div>';

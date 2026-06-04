@@ -102,7 +102,7 @@ dbSaveSetting(key, val) // 設定を保存
 
 ## 注意事項
 
-1. **Service Workerのキャッシュ** — `index.html` を大幅変更した場合、`sw.js` の `CACHE_NAME: 'kakeibo-v33'` のバージョン番号を上げないと古いキャッシュが残る場合がある。
+1. **Service Workerのキャッシュ** — `index.html` を大幅変更した場合、`sw.js` の `CACHE_NAME` のバージョン番号を上げないと古いキャッシュが残る場合がある。
 2. **単一ファイル構成** — CSS・JS・HTMLはすべて `index.html` に含める。外部ファイルに分割しない。
 3. **デモ用フレーム** — デスクトップで開くとiPhoneフレームが表示される。`@media (display-mode: standalone)` でPWAインストール後の表示を制御している。
 4. **IndexedDB** — データはブラウザのローカルストレージ（IndexedDB）に保存される。Dexieライブラリ経由でのみアクセスすること。

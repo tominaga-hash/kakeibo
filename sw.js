@@ -2,19 +2,24 @@
    家計簿 Service Worker  v2.0
    オフライン対応 + キャッシュ戦略
 ───────────────────────────────────────────── */
-const CACHE_NAME = 'kakeibo-v47';
+const CACHE_NAME = 'kakeibo-v48';
 
 // キャッシュするアセット（アプリシェル）
 const SHELL_ASSETS = [
   './index.html',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js',
-  './dexie.min.js'
+  './manifest.json',
+  './dexie.min.js',
+  './icon-192.png',
+  './icon-512.png',
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js'
 ];
 
-// ── インストール：アプリシェルをキャッシュ
+// ── インストール：アプリシェルをキャッシュ（1件失敗しても全体は止めない）
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL_ASSETS))
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.allSettled(SHELL_ASSETS.map(url => cache.add(url)))
+    )
   );
   self.skipWaiting();
 });
@@ -59,11 +64,4 @@ self.addEventListener('fetch', event => {
         return fetch(event.request).then(response => {
           if (response && response.status === 200 && response.type !== 'opaque') {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        });
-      })
-    );
-  }
-});
+        

@@ -831,6 +831,10 @@ function fmtC(n){if(n>=100000)return Math.round(n/10000)+'万';if(n>=10000)retur
 function mTx(m){return TXS.filter(t=>t.date.startsWith(m));}
 function sE(txs){return txs.filter(t=>t.type==='expense').reduce((a,t)=>a+t.amount,0);}
 function sI(txs){return txs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amount,0);}
+// ── サブスク退会判定：endYM（この月以降は請求なし）。endYMが無ければ常に有効
+function subActive(s,ym){return !s.endYM||ym<s.endYM;}
+function subsAt(ym){return SUBS.filter(s=>subActive(s,ym));}
+function subTot(ym){return subsAt(ym).reduce((a,s)=>a+s.amount,0);}
 // ── iOS scroll lock: オーバーレイ表示中に背景スクリーンのスクロールを凍結 ──
 let _sLockEl=null,_sLockPos=0,_sLockN=0;
 function lockScroll(){const el=document.querySelector('.sc.on');if(el){if(_sLockN===0){_sLockEl=el;_sLockPos=el.scrollTop;el.style.overflowY='hidden';}  _sLockN++;}}
@@ -979,11 +983,11 @@ function rHome(){
   const [cy,cm]=CUR_YM.split('-');
   document.getElementById('home-month-lbl').textContent=`${cy}年${parseInt(cm)}月`;
   // サブスク
-  const subTotal=SUBS.reduce((a,s)=>a+s.amount,0);
+  const subTotal=subTot(CUR_YM);
   document.getElementById('h-sub-total').textContent=fmt(subTotal);
   document.getElementById('h-sub-annual').textContent=fmt(subTotal*12);
   const today=new Date().getDate();
-  const nextSub=[...SUBS].sort((a,b)=>a.day-b.day).find(s=>s.day>=today);
+  const nextSub=[...subsAt(CUR_YM)].sort((a,b)=>a.day-b.day).find(s=>s.day>=today);
   document.getElementById('h-next-pay').textContent=nextSub?`${parseInt(cm)}/${nextSub.day} ${nextSub.name}`:'今月分完了';
   // 前月コピーバナー（設定タブへ移動済み）
   // Donut
@@ -1025,7 +1029,7 @@ function rCal(){
   mTx(S.calMonth).forEach(t=>{const d=parseInt(t.date.slice(8));if(!txByDay[d])txByDay[d]=[];txByDay[d].push(t);});
   // サブスクを引き落とし日でグループ化
   const subByDay={};
-  SUBS.forEach(s=>{const d=s.day;if(d>=1&&d<=days){if(!subByDay[d])subByDay[d]=[];subByDay[d].push(s);}});
+  subsAt(S.calMonth).forEach(s=>{const d=s.day;if(d>=1&&d<=days){if(!subByDay[d])subByDay[d]=[];subByDay[d].push(s);}});
   const todayD=new Date();const isThisMonth=(todayD.getFullYear()===y&&todayD.getMonth()+1===m);
   let html='',day=1;
   const rows=Math.ceil((first+days)/7);
@@ -1104,7 +1108,7 @@ function showMonthPanel(autoScroll=true){
   const [y,m]=S.calMonth.split('-').map(Number);
   const days=new Date(y,m,0).getDate();
   const txs=mTx(S.calMonth).sort((a,b)=>b.date.localeCompare(a.date));
-  const subs=SUBS.filter(s=>s.day<=days);
+  const subs=subsAt(S.calMonth).filter(s=>s.day<=days);
   const subTotal=subs.reduce((a,s)=>a+s.amount,0);
   const inc=sI(txs),exp=sE(txs)+subTotal;
   const [cy,cm]=S.calMonth.split('-');
@@ -1135,7 +1139,7 @@ function showMonthPanel(autoScroll=true){
     listHTML+=items.map(item=>{
       if(item.kind==='tx')return txHTML(item.data,true,true,true);
       const s=item.data;
-      return `<div class="txi"><div class="txic" style="background:${(s.color||'#8b5cf6')}1a;">${s.icon||'🔄'}</div><div class="txin"><div class="txn">${s.name} <span style="font-size:10px;color:#8b5cf6;background:#f3f0ff;padding:1px 5px;border-radius:4px;">サブスク</span></div><div class="txd">${gc(s.category_id).name}</div></div><div class="txa exp">-${fmt(s.amount)}</div></div>`;
+      return `<div class="txi"><div class="txic" style="background:${(s.color||'#8b5cf6')}1a;">${s.icon||'🔄'}</div><div class="txin"><div class="txn">${s.name} <span style="font-size:10px;color:#8b5cf6;background:#f3f0ff;padding:1px 5px;border-radius:4px;">サブスク</span></div><div class="txd">${gc(s.category_id).name}</div></div><div class="txa exp">-${fmt(s.amount)}</div><button onclick="cancelSubsc('${s.id}')" style="background:#fef2f2;border:1px solid #fecaca;color:#ef4444;font-size:11px;font-weight:600;padding:4px 8px;border-radius:8px;cursor:pointer;flex-shrink:0;margin-left:6px;">退会</button></div>`;
     }).join('');
   });
   document.getElementById('mo-tx-list').innerHTML=listHTML;
@@ -1155,7 +1159,7 @@ function showDayPanel(d){
   const days=new Date(y,m,0).getDate();
   const dateStr=`${S.calMonth}-${String(d).padStart(2,'0')}`;
   const txs=TXS.filter(t=>t.date===dateStr).sort((a,b)=>a.type.localeCompare(b.type));
-  const subs=SUBS.filter(s=>s.day===d&&d<=days);
+  const subs=SUBS.filter(s=>s.day===d&&d<=days&&subActive(s,S.calMonth));
   const exp=sE(txs),inc=sI(txs);
   const subExp=subs.reduce((a,s)=>a+s.amount,0);
   const totalExp=exp+subExp;
@@ -1188,8 +1192,8 @@ function rMonthly(){
   const curYM=months[months.length-1];
   const [y,m]=curYM.split('-');
   document.getElementById('r-mo-lbl').textContent=`${y}年${parseInt(m)}月`;
-  const subTotal=SUBS.reduce((a,s)=>a+s.amount,0); // 月次サブスク合計
-  const expD=months.map(ym=>sE(mTx(ym))+subTotal);  // 取引+サブスク
+  const subTotal=subTot(curYM); // 当月の月次サブスク合計
+  const expD=months.map(ym=>sE(mTx(ym))+subTot(ym));  // 取引+サブスク（各月の退会反映）
   const incD=months.map(ym=>sI(mTx(ym)));
   const lbls=months.map(ym=>{const [,mm]=ym.split('-');return parseInt(mm)+'月';});
   if(S.charts.b)S.charts.b.destroy();
@@ -1199,12 +1203,12 @@ function rMonthly(){
   // カテゴリ別：取引+サブスクを合算
   const ctot={};
   txs.filter(t=>t.type==='expense').forEach(t=>{ctot[t.category_id]=(ctot[t.category_id]||0)+t.amount;});
-  SUBS.forEach(s=>{ctot[s.category_id]=(ctot[s.category_id]||0)+s.amount;});
+  subsAt(curYM).forEach(s=>{ctot[s.category_id]=(ctot[s.category_id]||0)+s.amount;});
   const ents=Object.entries(ctot).sort((a,b)=>b[1]-a[1]);const mx=ents[0]?.[1]||1;
-  document.getElementById('cat-rank').innerHTML=ents.map(([id,v],i)=>{const c=gc(id);const p=Math.round(v/mx*100);const catTxs=txs.filter(t=>t.type==='expense'&&t.category_id===id);const catSubs=SUBS.filter(s=>s.category_id===id);const hasDet=catTxs.length>0||catSubs.length>0;const detHtml=[...catSubs.map(s=>`<div class="rdi"><span class="rdi-ico">${c.icon}</span><span class="rdi-nm">${s.name}<span class="rdi-dt">サブスク</span></span><span class="rdi-am">-${fmt(s.amount)}</span></div>`),...catTxs.sort((a,b)=>b.amount-a.amount).map(t=>`<div class="rdi" onclick="editTx('${t.id}')"><span class="rdi-ico">${c.icon}</span><span class="rdi-nm">${t.memo||c.name}<span class="rdi-dt">${t.date.slice(5).replace('-','/')}</span></span><span class="rdi-am">-${fmt(t.amount)}</span></div>`)].join('');return`<div class="rank-item${hasDet?' rank-tap':''}"${hasDet?` onclick="togRD('${id}')"`:''}><span style="font-size:11px;color:#9ca3af;width:13px;text-align:center;">${i+1}</span><span style="font-size:15px;width:20px;">${c.icon}</span><span style="font-size:11px;color:#111;width:46px;flex-shrink:0;">${c.name}</span><div class="rbw"><div class="rb" style="width:${p}%;background:${c.color};"></div></div><span class="ra">${fmt(v)}</span>${hasDet?`<span class="rarr" id="rarr-${id}">▶</span>`:''}</div>${hasDet?`<div class="rdet" id="rdet-${id}"><div class="rdet-close" onclick="togRD('${id}')">▲ 閉じる</div>${detHtml}</div>`:''}`}).join('')||'<div style="text-align:center;padding:18px;font-size:12px;color:#9ca3af;">データなし</div>';
+  document.getElementById('cat-rank').innerHTML=ents.map(([id,v],i)=>{const c=gc(id);const p=Math.round(v/mx*100);const catTxs=txs.filter(t=>t.type==='expense'&&t.category_id===id);const catSubs=subsAt(curYM).filter(s=>s.category_id===id);const hasDet=catTxs.length>0||catSubs.length>0;const detHtml=[...catSubs.map(s=>`<div class="rdi"><span class="rdi-ico">${c.icon}</span><span class="rdi-nm">${s.name}<span class="rdi-dt">サブスク</span></span><span class="rdi-am">-${fmt(s.amount)}</span></div>`),...catTxs.sort((a,b)=>b.amount-a.amount).map(t=>`<div class="rdi" onclick="editTx('${t.id}')"><span class="rdi-ico">${c.icon}</span><span class="rdi-nm">${t.memo||c.name}<span class="rdi-dt">${t.date.slice(5).replace('-','/')}</span></span><span class="rdi-am">-${fmt(t.amount)}</span></div>`)].join('');return`<div class="rank-item${hasDet?' rank-tap':''}"${hasDet?` onclick="togRD('${id}')"`:''}><span style="font-size:11px;color:#9ca3af;width:13px;text-align:center;">${i+1}</span><span style="font-size:15px;width:20px;">${c.icon}</span><span style="font-size:11px;color:#111;width:46px;flex-shrink:0;">${c.name}</span><div class="rbw"><div class="rb" style="width:${p}%;background:${c.color};"></div></div><span class="ra">${fmt(v)}</span>${hasDet?`<span class="rarr" id="rarr-${id}">▶</span>`:''}</div>${hasDet?`<div class="rdet" id="rdet-${id}"><div class="rdet-close" onclick="togRD('${id}')">▲ 閉じる</div>${detHtml}</div>`:''}`}).join('')||'<div style="text-align:center;padding:18px;font-size:12px;color:#9ca3af;">データなし</div>';
   const curE=sE(txs)+subTotal; // サブスク込み
   const prevM=months[months.length-2];
-  if(prevM){const prev=sE(mTx(prevM))+subTotal;const diff=curE-prev,sg=diff>=0?'▲':'▼',col=diff>=0?'#ef4444':'#22c55e';document.getElementById('cmp-body').innerHTML=`<div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">今月の支出</span><span style="font-size:14px;font-weight:700;color:#111;">${fmt(curE)}</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">先月の支出</span><span style="font-size:13px;color:#9ca3af;">${fmt(prev)}</span></div><div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #f3f4f6;margin-top:3px;"><span style="font-size:12px;color:#6b7280;">前月比</span><span style="font-size:14px;font-weight:700;color:${col};">${sg} ${fmt(Math.abs(diff))}</span></div>`;}
+  if(prevM){const prev=sE(mTx(prevM))+subTot(prevM);const diff=curE-prev,sg=diff>=0?'▲':'▼',col=diff>=0?'#ef4444':'#22c55e';document.getElementById('cmp-body').innerHTML=`<div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">今月の支出</span><span style="font-size:14px;font-weight:700;color:#111;">${fmt(curE)}</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="font-size:12px;color:#6b7280;">先月の支出</span><span style="font-size:13px;color:#9ca3af;">${fmt(prev)}</span></div><div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #f3f4f6;margin-top:3px;"><span style="font-size:12px;color:#6b7280;">前月比</span><span style="font-size:14px;font-weight:700;color:${col};">${sg} ${fmt(Math.abs(diff))}</span></div>`;}
   // カテゴリ別収入
   const itot={};
   txs.filter(t=>t.type==='income').forEach(t=>{itot[t.category_id]=(itot[t.category_id]||0)+t.amount;});
@@ -1232,12 +1236,11 @@ function rAnnual(){
   document.getElementById('r-yr-lbl').textContent=`${curY}年`;
   document.getElementById('annual-chart-lbl').textContent=`${curY}年 月別推移`;
   const months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-  const subMo=SUBS.reduce((a,s)=>a+s.amount,0); // 月次サブスク合計
   const incArr=Array(12).fill(0);const expArr=Array(12).fill(0);const invExpArr=Array(12).fill(0);
   for(let mm=1;mm<=12;mm++){
     const ym=`${curY}-${String(mm).padStart(2,'0')}`;
     const txs=mTx(ym);
-    incArr[mm-1]=sI(txs);expArr[mm-1]=sE(txs)+subMo; // サブスク込み
+    incArr[mm-1]=sI(txs);expArr[mm-1]=sE(txs)+subTot(ym); // サブスク込み（各月の退会反映）
     // 投資カテゴリ（保険・株/NISA）の支出額
     invExpArr[mm-1]=txs.filter(t=>t.category_id==='insurance'||t.category_id==='invest').reduce((a,t)=>a+t.amount,0);
   }
@@ -1272,21 +1275,22 @@ function rAnnual(){
 //  REPORT — Subscription
 // ═══════════════════════════════════════════════════════
 function rSubsc(){
-  const total=SUBS.reduce((a,s)=>a+s.amount,0);
+  const actives=subsAt(CUR_YM);
+  const total=actives.reduce((a,s)=>a+s.amount,0);
   document.getElementById('sub-total-disp').textContent=fmt(total);
   document.getElementById('sub-annual-disp').textContent='年換算 '+fmt(total*12);
-  document.getElementById('sub-count').textContent=SUBS.length+'件';
-  if(SUBS.length>0){
-    const maxSub=SUBS.reduce((a,s)=>s.amount>a.amount?s:a,SUBS[0]);
+  document.getElementById('sub-count').textContent=actives.length+'件';
+  if(actives.length>0){
+    const maxSub=actives.reduce((a,s)=>s.amount>a.amount?s:a,actives[0]);
     document.getElementById('sub-max').textContent=maxSub.icon+' '+fmt(maxSub.amount);
   } else {
     document.getElementById('sub-max').textContent='---';
   }
   const today=new Date().getDate();
-  const upcoming=SUBS.filter(s=>s.day>=today).sort((a,b)=>a.day-b.day).slice(0,4);
+  const upcoming=actives.filter(s=>s.day>=today).sort((a,b)=>a.day-b.day).slice(0,4);
   const [,cm]=CUR_YM.split('-');
   document.getElementById('upc-list').innerHTML=upcoming.map(s=>`<div class="upc-row"><div class="upc-date">${parseInt(cm)}/${s.day}</div><div style="font-size:16px;">${s.icon}</div><div class="upc-name">${s.name}</div><div class="upc-amt">-${fmt(s.amount)}</div></div>`).join('')||'<div style="padding:12px;text-align:center;font-size:12px;color:#9ca3af;">今月の残りの支払い予定はありません</div>';
-  const entSubs=SUBS.filter(s=>s.category_id==='subsc');
+  const entSubs=actives.filter(s=>s.category_id==='subsc');
   if(entSubs.length>0){
     const entTotal=entSubs.reduce((a,s)=>a+s.amount,0);
     document.getElementById('advice-body').innerHTML=`エンタメ系サブスク（${entSubs.map(s=>s.name).join('・')}）の合計が <strong style="color:#d97706;">月${fmt(entTotal)}（年${fmt(entTotal*12)}）</strong> になっています。使っていないものを1つ解約すると年間<strong style="color:#d97706;"> ¥${(Math.min(...entSubs.map(s=>s.amount))*12).toLocaleString()} </strong>節約できます。`;
@@ -1295,7 +1299,7 @@ function rSubsc(){
   }
   document.getElementById('sub-list').innerHTML=SUBS.length===0
     ? '<div style="padding:16px;text-align:center;font-size:12px;color:#9ca3af;">サブスクが登録されていません</div>'
-    : SUBS.map(s=>{const c=gc(s.category_id);return`<div class="sub-row"><div class="suic" style="background:${s.color}20;">${s.icon}</div><div class="suin"><div class="sun">${s.name}</div><div class="sud">毎月${s.day}日 · ${c.name}</div></div><div class="suamt">-${fmt(s.amount)}</div><button onclick="deleteSubsc('${s.id}')" style="background:none;border:none;color:#ef4444;font-size:18px;padding:4px 8px;cursor:pointer;flex-shrink:0;">🗑</button></div>`;}).join('');
+    : SUBS.map(s=>{const c=gc(s.category_id);const cancelled=!!s.endYM;const ey=cancelled?(()=>{const[yy,mm]=s.endYM.split('-');return`${parseInt(mm)}月退会済`;})():'';const nameStyle=cancelled?'text-decoration:line-through;color:#9ca3af;':'';return`<div class="sub-row"${cancelled?' style="opacity:.7;"':''}><div class="suic" style="background:${s.color}20;">${s.icon}</div><div class="suin"><div class="sun" style="${nameStyle}">${s.name}${cancelled?` <span style="font-size:10px;color:#ef4444;background:#fef2f2;padding:1px 5px;border-radius:4px;text-decoration:none;">${ey}</span>`:''}</div><div class="sud">毎月${s.day}日 · ${c.name}</div></div><div class="suamt" style="${cancelled?'color:#d1d5db;':''}">-${fmt(s.amount)}</div>${cancelled?`<button onclick="resumeSubsc('${s.id}')" style="background:#ecfdf5;border:1px solid #a7f3d0;color:#059669;font-size:11px;font-weight:600;padding:4px 8px;border-radius:8px;cursor:pointer;flex-shrink:0;margin-left:6px;">再開</button>`:''}<button onclick="deleteSubsc('${s.id}')" style="background:none;border:none;color:#ef4444;font-size:18px;padding:4px 8px;cursor:pointer;flex-shrink:0;">🗑</button></div>`;}).join('');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1745,6 +1749,26 @@ async function deleteSubsc(id){
   if(!confirm('このサブスクを削除しますか？'))return;
   await db.subscriptions.delete(id);SUBS=SUBS.filter(s=>s.id!==id);
   rSubsc();rHome();toast('削除しました');
+}
+// 退会：S.calMonth（表示中の月）以降を請求対象外にする。前月までは記録に残る
+async function cancelSubsc(id){
+  const s=SUBS.find(x=>x.id===id);if(!s)return;
+  const [y,m]=S.calMonth.split('-');
+  const prevYM_=prevYM(S.calMonth);const [py,pm]=prevYM_.split('-');
+  if(!confirm(`「${s.name}」を${parseInt(m)}月以降 退会しますか？\n（${parseInt(pm)}月までは記録に残ります）`))return;
+  s.endYM=S.calMonth;
+  await db.subscriptions.put(s);
+  refreshPrevMo();rHome();rCal();if(S.reportTab==='subsc')rSubsc();
+  toast(`「${s.name}」を${parseInt(m)}月以降 退会しました`);
+}
+// 退会取り消し（再開）
+async function resumeSubsc(id){
+  const s=SUBS.find(x=>x.id===id);if(!s)return;
+  if(!confirm(`「${s.name}」の退会を取り消して再開しますか？`))return;
+  delete s.endYM;
+  await db.subscriptions.put(s);
+  refreshPrevMo();rHome();rCal();if(S.reportTab==='subsc')rSubsc();
+  toast(`「${s.name}」を再開しました`);
 }
 
 // =======================================================

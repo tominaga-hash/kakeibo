@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v49 -->
+<title>家計簿</title><!-- v50 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -121,6 +121,10 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .mslot-ttl{font-size:12px;font-weight:700;color:#E65100;}
 .mslot-sum{font-size:11px;color:#E65100;font-weight:600;}
 .madd{background:#FB8C00;color:#fff;border:none;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;}
+.qchip{background:#fff;border:1px solid #FFCC80;color:#E65100;border-radius:14px;padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.qchip:active{background:#FFF3E0;}
+.fchip{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:14px;padding:5px 9px;font-size:11px;color:#E65100;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.fchip .fx{color:#ef4444;font-weight:700;}
 .cal-scroll{flex:1;min-height:0;overflow-y:scroll;touch-action:pan-y;overscroll-behavior:contain;}
 .cdow{font-size:10px;font-weight:700;color:#4a7a3a;text-align:center;padding:6px 0 5px;letter-spacing:0.02em;}
 .cdow.su{color:#ef4444;}.cdow.sa{color:#3b82f6;}
@@ -721,10 +725,38 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <div class="fld">区分</div>
         <div class="seg" id="meal-slot-seg" style="margin-bottom:12px;"></div>
         <div class="fld">食べたもの</div>
-        <input type="text" id="meal-name" class="fli" placeholder="例）ご飯・サラダ" maxlength="40"/>
-        <div class="fld">カロリー（kcal）</div>
-        <input type="number" id="meal-kcal" class="fli" placeholder="240" min="0" max="9999" inputmode="numeric"/>
-        <div class="fld">よく使う食品（タップで入力）</div>
+        <input type="text" id="meal-name" class="fli" placeholder="例）ご飯・サラダ" maxlength="40" oninput="updMealTotal()"/>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <div class="fld">1個/1食あたり（kcal）</div>
+            <input type="number" id="meal-unit" class="fli" placeholder="240" min="0" max="99999" inputmode="numeric" oninput="updMealTotal()" style="width:calc(100% - 14px);margin-right:0;"/>
+          </div>
+          <div style="width:110px;">
+            <div class="fld">個数</div>
+            <input type="number" id="meal-qty" class="fli" value="1" min="0" max="99" step="0.5" inputmode="decimal" oninput="updMealTotal()" style="width:96px;margin-right:0;"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;padding:0 14px 6px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:#9ca3af;align-self:center;">個数:</span>
+          <button type="button" class="qchip" onclick="setQty(0.5)">½</button>
+          <button type="button" class="qchip" onclick="setQty(1)">1</button>
+          <button type="button" class="qchip" onclick="setQty(2)">2</button>
+          <button type="button" class="qchip" onclick="setQty(3)">3</button>
+          <button type="button" class="qchip" onclick="stepQty(1)">＋1</button>
+          <button type="button" class="qchip" onclick="stepQty(-1)">−1</button>
+        </div>
+        <div style="margin:0 14px 10px;padding:9px 12px;background:#FFF3E0;border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#E65100;">合計カロリー</span>
+          <span style="font-size:18px;font-weight:800;color:#E65100;" id="meal-total-prev">0 kcal</span>
+        </div>
+        <div class="fld" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>⭐ よく食べる物</span>
+          <button type="button" onclick="registerFav()" style="background:none;border:none;color:#FB8C00;font-size:11px;font-weight:600;cursor:pointer;">＋今の内容を登録</button>
+        </div>
+        <div id="meal-fav-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
+        <div class="fld">🕘 最近使った</div>
+        <div id="meal-recent-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
+        <div class="fld">食品プリセットから選ぶ（タップで入力）</div>
         <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品名で検索（例：バナナ）" oninput="rMealPresets(this.value)" style="margin-bottom:8px;"/>
         <div id="meal-preset-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px;max-height:148px;overflow-y:auto;"></div>
         <button class="svbtn" id="meal-save-btn" onclick="saveMeal()" style="background:linear-gradient(135deg,#FB8C00,#E65100);">記録する</button>
@@ -829,6 +861,14 @@ try{
     settings:       'key',
     subscriptions:  'id',
     meals:          'id, date, slot'
+  });
+  db.version(4).stores({
+    transactions:   'id, type, date, category_id',
+    customCats:     'id, type',
+    settings:       'key',
+    subscriptions:  'id',
+    meals:          'id, date, slot',
+    favfoods:       'id'
   });
 }catch(e){console.error('Dexie init failed:',e);}
 
@@ -981,7 +1021,8 @@ var FOOD_PRESETS=[
   {n:'はちみつ大さじ1',k:65,c:'調味料・その他'},{n:'ごま油大さじ1',k:110,c:'調味料・その他'},{n:'オリーブ油大さじ1',k:110,c:'調味料・その他'},
   {n:'ジャム大さじ1',k:50,c:'調味料・その他'},{n:'バター(パン用)',k:75,c:'調味料・その他'},{n:'ふりかけ1袋',k:15,c:'調味料・その他'},
   {n:'梅干し1個',k:5,c:'調味料・その他'},{n:'のり1枚',k:2,c:'調味料・その他'},
-];
+,
+  {n:'おにぎり鮭',k:180,c:'主食'},{n:'おにぎり梅',k:170,c:'主食'},{n:'おにぎりツナマヨ',k:230,c:'主食'},{n:'おにぎり昆布',k:175,c:'主食'},{n:'お茶漬け1杯',k:150,c:'主食'},{n:'混ぜご飯1杯',k:280,c:'主食'},{n:'ガーリックライス',k:450,c:'主食'},{n:'タコライス',k:550,c:'主食'},{n:'ロコモコ',k:700,c:'主食'},{n:'ビビンバ',k:600,c:'主食'},{n:'石焼ビビンバ',k:650,c:'主食'},{n:'親子丼(大盛)',k:850,c:'主食'},{n:'豚丼',k:750,c:'主食'},{n:'ねぎとろ丼',k:450,c:'主食'},{n:'しらす丼',k:400,c:'主食'},{n:'カオマンガイ',k:600,c:'主食'},{n:'ガパオライス',k:650,c:'主食'},{n:'ナシゴレン',k:600,c:'主食'},{n:'担々麺',k:550,c:'麺類'},{n:'台湾ラーメン',k:500,c:'麺類'},{n:'塩ラーメン',k:420,c:'麺類'},{n:'家系ラーメン',k:600,c:'麺類'},{n:'油そば',k:650,c:'麺類'},{n:'肉うどん',k:450,c:'麺類'},{n:'カレーうどん',k:500,c:'麺類'},{n:'釜玉うどん',k:400,c:'麺類'},{n:'焼きうどん',k:450,c:'麺類'},{n:'ペヤング1個',k:540,c:'麺類'},{n:'どん兵衛1個',k:420,c:'麺類'},{n:'ジャージャー麺',k:550,c:'麺類'},{n:'冷麺',k:450,c:'麺類'},{n:'パッタイ',k:600,c:'麺類'},{n:'汁なし担々麺',k:600,c:'麺類'},{n:'ボロネーゼ',k:620,c:'麺類'},{n:'ペスカトーレ',k:550,c:'麺類'},{n:'たらこパスタ',k:520,c:'麺類'},{n:'明太子パスタ',k:530,c:'麺類'},{n:'きのこパスタ',k:450,c:'麺類'},{n:'青椒肉絲',k:350,c:'中華・エスニック'},{n:'エビチリ',k:300,c:'中華・エスニック'},{n:'春巻き2本',k:250,c:'中華・エスニック'},{n:'八宝菜',k:300,c:'中華・エスニック'},{n:'チンジャオ',k:350,c:'中華・エスニック'},{n:'マーボー茄子',k:400,c:'中華・エスニック'},{n:'油淋鶏',k:450,c:'中華・エスニック'},{n:'中華風コーンスープ',k:80,c:'中華・エスニック'},{n:'小籠包3個',k:180,c:'中華・エスニック'},{n:'シュウマイ3個',k:180,c:'中華・エスニック'},{n:'ビーフン炒め',k:380,c:'中華・エスニック'},{n:'ガパオ',k:450,c:'中華・エスニック'},{n:'トムヤムクン',k:120,c:'中華・エスニック'},{n:'グリーンカレー',k:500,c:'中華・エスニック'},{n:'生春巻き2本',k:120,c:'中華・エスニック'},{n:'サムギョプサル',k:500,c:'中華・エスニック'},{n:'チヂミ',k:350,c:'中華・エスニック'},{n:'キンパ2切れ',k:150,c:'中華・エスニック'},{n:'プルコギ',k:400,c:'中華・エスニック'},{n:'スンドゥブ',k:250,c:'中華・エスニック'},{n:'ヤンニョムチキン3個',k:350,c:'中華・エスニック'},{n:'タッカルビ',k:500,c:'中華・エスニック'},{n:'チャプチェ',k:300,c:'中華・エスニック'},{n:'フォー(牛)',k:380,c:'中華・エスニック'},{n:'すき焼き1人前',k:600,c:'鍋・煮物'},{n:'しゃぶしゃぶ1人前',k:450,c:'鍋・煮物'},{n:'もつ鍋1人前',k:450,c:'鍋・煮物'},{n:'キムチ鍋1人前',k:400,c:'鍋・煮物'},{n:'水炊き1人前',k:350,c:'鍋・煮物'},{n:'寄せ鍋1人前',k:400,c:'鍋・煮物'},{n:'おでん大根',k:15,c:'鍋・煮物'},{n:'おでん卵',k:80,c:'鍋・煮物'},{n:'おでんちくわ',k:60,c:'鍋・煮物'},{n:'おでんこんにゃく',k:10,c:'鍋・煮物'},{n:'おでん厚揚げ',k:100,c:'鍋・煮物'},{n:'おでんはんぺん',k:90,c:'鍋・煮物'},{n:'おでん牛すじ',k:90,c:'鍋・煮物'},{n:'豚汁(具沢山)',k:200,c:'鍋・煮物'},{n:'かぼちゃ煮',k:90,c:'鍋・煮物'},{n:'ひじきの煮物',k:90,c:'鍋・煮物'},{n:'里芋煮',k:100,c:'鍋・煮物'},{n:'シリアル1杯',k:180,c:'朝食・軽食'},{n:'オートミール1杯',k:150,c:'朝食・軽食'},{n:'フレンチトースト',k:350,c:'朝食・軽食'},{n:'パンケーキ2枚',k:450,c:'朝食・軽食'},{n:'ホットケーキ2枚',k:500,c:'朝食・軽食'},{n:'フルーツグラノーラ',k:250,c:'朝食・軽食'},{n:'プロテイン1杯',k:120,c:'朝食・軽食'},{n:'プロテインバー1本',k:180,c:'朝食・軽食'},{n:'ゆで卵2個',k:160,c:'朝食・軽食'},{n:'野菜スムージー',k:120,c:'朝食・軽食'},{n:'食パン+目玉焼き',k:260,c:'朝食・軽食'},{n:'ベーグルサンド',k:380,c:'朝食・軽食'},{n:'おにぎり+味噌汁',k:220,c:'朝食・軽食'},{n:'カフェオレ+トースト',k:290,c:'朝食・軽食'},{n:'コーンスープ+パン',k:270,c:'朝食・軽食'},{n:'ヨーグルトボウル',k:200,c:'朝食・軽食'},{n:'ハーゲンダッツ1個',k:260,c:'お菓子・スイーツ'},{n:'パフェ',k:450,c:'お菓子・スイーツ'},{n:'タピオカミルクティー',k:280,c:'お菓子・スイーツ'},{n:'チーズタルト1個',k:230,c:'お菓子・スイーツ'},{n:'モンブラン',k:380,c:'お菓子・スイーツ'},{n:'ティラミス',k:300,c:'お菓子・スイーツ'},{n:'バウムクーヘン1切れ',k:200,c:'お菓子・スイーツ'},{n:'チョコチップクッキー1枚',k:60,c:'お菓子・スイーツ'},{n:'ミルフィーユ',k:350,c:'お菓子・スイーツ'},{n:'エクレア1個',k:200,c:'お菓子・スイーツ'},{n:'みたらし団子1本',k:120,c:'お菓子・スイーツ'},{n:'かき氷',k:150,c:'お菓子・スイーツ'},{n:'クレープ(チョコバナナ)',k:380,c:'お菓子・スイーツ'},{n:'ポップコーン(キャラメル)',k:250,c:'お菓子・スイーツ'},{n:'フィナンシェ1個',k:130,c:'お菓子・スイーツ'},{n:'カヌレ1個',k:150,c:'お菓子・スイーツ'},{n:'チュロス1本',k:150,c:'お菓子・スイーツ'},{n:'ベビーカステラ5個',k:150,c:'お菓子・スイーツ'},{n:'ドーナツ(チョコ)',k:280,c:'お菓子・スイーツ'},{n:'シフォンケーキ1切れ',k:200,c:'お菓子・スイーツ'},{n:'カフェラテ(スタバ風)',k:190,c:'飲み物'},{n:'キャラメルマキアート',k:250,c:'飲み物'},{n:'抹茶ラテ(スタバ風)',k:240,c:'飲み物'},{n:'ミルクティー(加糖)',k:90,c:'飲み物'},{n:'レモンティー',k:40,c:'飲み物'},{n:'ジンジャーエール',k:150,c:'飲み物'},{n:'メロンソーダ',k:200,c:'飲み物'},{n:'カルピス',k:90,c:'飲み物'},{n:'オレンジジュース(果汁100%)',k:90,c:'飲み物'},{n:'トマトジュース',k:40,c:'飲み物'},{n:'豆乳(調整)',k:110,c:'飲み物'},{n:'プロテインドリンク',k:120,c:'飲み物'},{n:'ミックスジュース',k:150,c:'飲み物'},{n:'いちごミルク',k:150,c:'飲み物'},{n:'ホットチョコレート',k:190,c:'飲み物'},{n:'梅ジュース',k:80,c:'飲み物'},{n:'ラムネ1本',k:100,c:'飲み物'},{n:'乳酸菌飲料(大)',k:130,c:'飲み物'},{n:'ローストチキン',k:300,c:'主菜(肉)'},{n:'チキンカツ',k:400,c:'主菜(肉)'},{n:'ガーリックチキン',k:350,c:'主菜(肉)'},{n:'豚しゃぶ100g',k:200,c:'主菜(肉)'},{n:'豚キムチ',k:350,c:'主菜(肉)'},{n:'ハムカツ',k:250,c:'主菜(肉)'},{n:'チャーシュー2枚',k:150,c:'主菜(肉)'},{n:'ミートボール3個',k:200,c:'主菜(肉)'},{n:'ソーセージ2本',k:180,c:'主菜(肉)'},{n:'ベーコンエッグ',k:250,c:'主菜(肉)'},{n:'牛カルビ100g',k:380,c:'主菜(肉)'},{n:'豚バラ大根',k:300,c:'主菜(肉)'},{n:'鶏の照り焼き',k:380,c:'主菜(肉)'},{n:'つくね2本',k:180,c:'主菜(肉)'},{n:'ぶりの照り焼き',k:280,c:'主菜(魚)'},{n:'カレイの唐揚げ',k:250,c:'主菜(魚)'},{n:'いか焼き',k:120,c:'主菜(魚)'},{n:'たこ唐揚げ',k:250,c:'主菜(魚)'},{n:'ホタテバター',k:150,c:'主菜(魚)'},{n:'サーモンムニエル',k:300,c:'主菜(魚)'},{n:'白身フライ',k:250,c:'主菜(魚)'},{n:'アジフライ2枚',k:300,c:'主菜(魚)'},{n:'いわしの蒲焼き',k:200,c:'主菜(魚)'},{n:'カキフライ3個',k:250,c:'主菜(魚)'},{n:'天ぷら(えび2尾)',k:180,c:'主菜(魚)'},{n:'ちくわ磯辺揚げ2本',k:150,c:'主菜(魚)'},{n:'ポテトサラダ(小鉢)',k:120,c:'副菜・野菜'},{n:'マカロニグラタン',k:400,c:'副菜・野菜'},{n:'ラタトゥイユ',k:120,c:'副菜・野菜'},{n:'アスパラベーコン',k:120,c:'副菜・野菜'},{n:'ほうれん草バター',k:90,c:'副菜・野菜'},{n:'なすの煮浸し',k:80,c:'副菜・野菜'},{n:'茶碗蒸し',k:80,c:'副菜・野菜'},{n:'筑前煮(小鉢)',k:120,c:'副菜・野菜'},{n:'もずく酢',k:15,c:'副菜・野菜'},{n:'冷やしトマト',k:30,c:'副菜・野菜'},{n:'枝豆(大)',k:150,c:'副菜・野菜'},{n:'おひたし',k:30,c:'副菜・野菜'},{n:'きんぴら(小鉢)',k:100,c:'副菜・野菜'}];
 
 // ── 今月キー
 function nowYM(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;}
@@ -995,6 +1036,7 @@ var TXS=[];
 var CC=[];   // custom categories
 var BUDGET=300000;
 var MEALS=[];            // 食事記録（IndexedDBからロード）
+var FAVS=[];             // よく食べる物（ユーザー登録）
 var PROFILE={height:0,weight:0,age:0,sex:'male',activity:1.55,target:2000}; // 身体情報・目標kcal
 
 // ═══════════════════════════════════════════════════════
@@ -1082,6 +1124,7 @@ async function initDB(){
 
     // 食事ロード
     MEALS=await db.meals.toArray();
+    FAVS=db.favfoods?await db.favfoods.toArray():[];
     const pset=await db.settings.get('profile');
     if(pset&&pset.value)PROFILE={...PROFILE,...pset.value};
 
@@ -1682,7 +1725,7 @@ function showMealDay(d){
     const sk=items.reduce((a,m)=>a+(m.kcal||0),0);
     body+=`<div class="mslot-hdr"><span class="mslot-ttl">${sl.icon} ${sl.name}</span><span style="flex:1;"></span><span class="mslot-sum">${sk?sk+' kcal':''}</span><button class="madd" onclick="openMealInput('${sl.id}','${ds}')">＋追加</button></div>`;
     if(items.length){
-      body+=items.map(m=>`<div class="txi" onclick="editMeal('${m.id}')" style="cursor:pointer;"><div class="txic" style="background:#FFF3E0;">${sl.icon}</div><div class="txin"><div class="txn">${esc(m.name)}</div><div class="txd">${m.kcal||0} kcal</div></div><button class="edit-btn">✏️</button></div>`).join('');
+      body+=items.map(m=>{const qstr=(m.qty&&m.qty!=1)?` <span style="font-size:11px;color:#9ca3af;">×${m.qty}</span>`:'';return`<div class="txi" onclick="editMeal('${m.id}')" style="cursor:pointer;"><div class="txic" style="background:#FFF3E0;">${sl.icon}</div><div class="txin"><div class="txn">${esc(m.name)}${qstr}</div><div class="txd">${m.kcal||0} kcal</div></div><button class="edit-btn">✏️</button></div>`;}).join('');
     }else{
       body+='<div style="padding:8px 13px;font-size:11px;color:#c4c4c6;">記録なし</div>';
     }
@@ -1706,7 +1749,48 @@ function rMealPresets(filter){
     + (more>0?`<div style="width:100%;text-align:center;font-size:10px;color:#9ca3af;padding:4px;">他${more}件 — 検索で絞り込み</div>`:'')
     || '<div style="font-size:11px;color:#9ca3af;padding:4px;">該当なし</div>';
 }
-function pickPreset(name,kcal){document.getElementById('meal-name').value=name;document.getElementById('meal-kcal').value=kcal;}
+function pickPreset(name,unit){document.getElementById('meal-name').value=name;document.getElementById('meal-unit').value=unit;updMealTotal();}
+// 個数×単価
+function getQty(){const q=parseFloat(document.getElementById('meal-qty').value);return(isNaN(q)||q<0)?1:q;}
+function getUnit(){const u=parseFloat(document.getElementById('meal-unit').value);return(isNaN(u)||u<0)?0:u;}
+function mealTotalKcal(){return Math.round(getUnit()*getQty());}
+function updMealTotal(){document.getElementById('meal-total-prev').textContent=mealTotalKcal()+' kcal';}
+function setQty(q){document.getElementById('meal-qty').value=q;updMealTotal();}
+function stepQty(d){let q=getQty()+d;if(q<0)q=0;document.getElementById('meal-qty').value=(Math.round(q*10)/10);updMealTotal();}
+// よく食べる物
+function rMealFavs(){
+  const el=document.getElementById('meal-fav-grid');if(!el)return;
+  el.innerHTML=FAVS.length?FAVS.map(f=>`<span class="fchip"><span onclick="pickFav('${esc(f.id)}')">${esc(f.name)} <b>${f.unit}</b></span><span class="fx" onclick="delFav('${esc(f.id)}')">✕</span></span>`).join('')
+    :'<span style="font-size:11px;color:#c4c4c6;">未登録（下で入力して「＋今の内容を登録」）</span>';
+}
+function pickFav(id){const f=FAVS.find(x=>x.id===id);if(!f)return;document.getElementById('meal-name').value=f.name;document.getElementById('meal-unit').value=f.unit;updMealTotal();}
+async function registerFav(){
+  const name=document.getElementById('meal-name').value.trim();
+  const unit=getUnit();
+  if(!name){toast('食べたものを入力してください');return;}
+  if(FAVS.some(f=>f.name===name)){toast('すでに登録済みです');return;}
+  const fav={id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name,unit};
+  try{await db.favfoods.put(fav);FAVS.push(fav);}catch(e){toast('⚠️ 登録に失敗しました');return;}
+  rMealFavs();toast(`⭐「${name}」を登録しました`);
+}
+async function delFav(id){
+  const f=FAVS.find(x=>x.id===id);if(!f)return;
+  if(!confirm(`「${f.name}」をよく食べる物から削除しますか？`))return;
+  FAVS=FAVS.filter(x=>x.id!==id);
+  try{await db.favfoods.delete(id);}catch(e){}
+  rMealFavs();
+}
+// 最近使った（記録から重複なしで最新8件）
+function rMealRecent(){
+  const el=document.getElementById('meal-recent-grid');if(!el)return;
+  const seen=new Set();const rec=[];
+  [...MEALS].sort((a,b)=>b.date.localeCompare(a.date)).forEach(m=>{
+    if(!seen.has(m.name)){seen.add(m.name);rec.push(m);}
+  });
+  const list=rec.slice(0,8);
+  el.innerHTML=list.length?list.map(m=>{const u=m.unit||m.kcal||0;return`<span class="fchip" onclick="pickPreset('${esc(m.name).replace(/'/g,"&#39;")}',${u})">${esc(m.name)} <b>${u}</b></span>`;}).join('')
+    :'<span style="font-size:11px;color:#c4c4c6;">まだ記録がありません</span>';
+}
 function openMealInput(slot,dateStr){
   lockScroll();
   S.editingMealId=null;S.mealSlot=slot||'breakfast';S.mealInputDate=dateStr||todayStr();
@@ -1714,9 +1798,10 @@ function openMealInput(slot,dateStr){
   document.getElementById('meal-save-btn').textContent='記録する';
   document.getElementById('meal-del-btn').style.display='none';
   document.getElementById('meal-name').value='';
-  document.getElementById('meal-kcal').value='';
+  document.getElementById('meal-unit').value='';
+  document.getElementById('meal-qty').value='1';
   const sb=document.getElementById('meal-preset-search');if(sb)sb.value='';
-  rMealSlotSeg();rMealPresets('');
+  rMealSlotSeg();rMealFavs();rMealRecent();rMealPresets('');updMealTotal();
   document.getElementById('meal-ov').classList.add('on');
 }
 function editMeal(id){
@@ -1727,26 +1812,27 @@ function editMeal(id){
   document.getElementById('meal-save-btn').textContent='更新する';
   document.getElementById('meal-del-btn').style.display='block';
   document.getElementById('meal-name').value=m.name||'';
-  document.getElementById('meal-kcal').value=m.kcal||'';
+  // 旧データ（unit/qty無し）はkcalを単価・個数1として扱う
+  document.getElementById('meal-unit').value=(m.unit!=null?m.unit:(m.kcal||0));
+  document.getElementById('meal-qty').value=(m.qty!=null?m.qty:1);
   const sb=document.getElementById('meal-preset-search');if(sb)sb.value='';
-  rMealSlotSeg();rMealPresets('');
+  rMealSlotSeg();rMealFavs();rMealRecent();rMealPresets('');updMealTotal();
   document.getElementById('meal-ov').classList.add('on');
 }
 function closeMealInput(){unlockScroll();document.getElementById('meal-ov').classList.remove('on');}
 async function saveMeal(){
   const name=document.getElementById('meal-name').value.trim();
-  const kcal=parseInt(document.getElementById('meal-kcal').value||0)||0;
+  const unit=getUnit();const qty=getQty();const kcal=mealTotalKcal();
   if(!name){toast('食べたものを入力してください');return;}
   const date=S.mealInputDate||todayStr();
   if(S.editingMealId){
     const i=MEALS.findIndex(x=>x.id===S.editingMealId);
-    if(i>=0){const upd={...MEALS[i],slot:S.mealSlot,name,kcal,date};try{await db.meals.put(upd);MEALS[i]=upd;}catch(e){toast('⚠️ 更新に失敗しました');return;}}
+    if(i>=0){const upd={...MEALS[i],slot:S.mealSlot,name,unit,qty,kcal,date};try{await db.meals.put(upd);MEALS[i]=upd;}catch(e){toast('⚠️ 更新に失敗しました');return;}}
     closeMealInput();rMeal();toast('✏️ 食事を更新しました');
   }else{
-    const meal={id:mealUid(),date,slot:S.mealSlot,name,kcal};
+    const meal={id:mealUid(),date,slot:S.mealSlot,name,unit,qty,kcal};
     try{await db.meals.put(meal);MEALS.push(meal);}catch(e){toast('⚠️ 保存に失敗しました');return;}
     closeMealInput();
-    // 入力した日が表示中の月なら選択して表示
     if(date.startsWith(S.mealMonth)){S.mealSel=parseInt(date.slice(8));}
     rMeal();
     toast(`🍽 ${kcal}kcal を記録しました ✓`);
@@ -2191,7 +2277,7 @@ function checkInstallBanner(){
 //  DATA EXPORT / IMPORT
 // =======================================================
 async function doExp(){
-  const data=JSON.stringify({version:'1.1',exportedAt:new Date().toISOString(),budget:BUDGET,profile:PROFILE,customCategories:CC,subscriptions:SUBS,transactions:TXS,meals:MEALS},null,2);
+  const data=JSON.stringify({version:'1.2',exportedAt:new Date().toISOString(),budget:BUDGET,profile:PROFILE,customCategories:CC,subscriptions:SUBS,transactions:TXS,meals:MEALS,favfoods:FAVS},null,2);
   const fname='kakeibo-backup.json';
   const blob=new Blob([data],{type:'application/json'});
   try{
@@ -2253,6 +2339,8 @@ async function loadJson(input){
     if(inSubs.length){await db.subscriptions.bulkPut(inSubs);inSubs.forEach(x=>{const i=SUBS.findIndex(e=>e.id===x.id);if(i>=0)SUBS[i]=x;else SUBS.push(x);});}
     const inMeals=(d.meals||[]);
     if(inMeals.length){await db.meals.bulkPut(inMeals);inMeals.forEach(x=>{const i=MEALS.findIndex(e=>e.id===x.id);if(i>=0)MEALS[i]=x;else MEALS.push(x);});}
+    const inFavs=(d.favfoods||[]);
+    if(inFavs.length&&db.favfoods){await db.favfoods.bulkPut(inFavs);inFavs.forEach(x=>{const i=FAVS.findIndex(e=>e.id===x.id);if(i>=0)FAVS[i]=x;else FAVS.push(x);});}
     if(d.profile){PROFILE={...PROFILE,...d.profile};await dbSaveSetting('profile',PROFILE);updMealTargetSv();}
     refreshPrevMo();rHome();updCatCnt();if(S.tab==='cal')rCal();if(S.tab==='rep')switchRTab(S.reportTab);if(S.tab==='meal')rMeal();
     const updTx=inTxs.length-newTxCnt,updSub=inSubs.length-newSubCnt;
@@ -2267,7 +2355,8 @@ async function confirmClear(){
   await db.subscriptions.clear();
   await db.customCats.clear();
   if(db.meals)await db.meals.clear();
-  TXS=[];SUBS=[];CC=[];MEALS=[];refreshPrevMo();if(S.tab==='meal')rMeal();rHome();if(S.tab==='cal')rCal();if(S.reportTab==='subsc')rSubsc();
+  if(db.favfoods)await db.favfoods.clear();
+  TXS=[];SUBS=[];CC=[];MEALS=[];FAVS=[];refreshPrevMo();if(S.tab==='meal')rMeal();rHome();if(S.tab==='cal')rCal();if(S.reportTab==='subsc')rSubsc();
   updCatCnt();
   toast('🗑 データを削除しました');
 }

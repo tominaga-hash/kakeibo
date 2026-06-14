@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v55 -->
+<title>家計簿</title><!-- v56 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -128,6 +128,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .mtab{flex:1;padding:12px 8px;font-size:13px;font-weight:600;color:#9ca3af;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;min-height:44px;}
 .mtab.on{color:#E65100;border-bottom-color:#FB8C00;}
 .mresult{height:44vh;height:44dvh;overflow-y:auto;overscroll-behavior:contain;}
+.meal-footer{position:sticky;bottom:0;background:#fff;padding:8px 0 calc(8px + env(safe-area-inset-bottom));margin-top:4px;box-shadow:0 -4px 10px rgba(0,0,0,.04);}
 .mtab:active{opacity:.7;}
 .qchip:active{background:#FFF3E0;}
 .fchip{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:14px;padding:5px 9px;font-size:11px;color:#E65100;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
@@ -786,13 +787,15 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <!-- 手入力パネル -->
         <div id="mpanel-manual" role="tabpanel" aria-labelledby="mtab-manual" hidden>
           <div class="fld">食べたもの</div>
-          <input type="text" id="meal-name" class="fli" placeholder="例）自家製サラダ" maxlength="40" oninput="updMealTotal()"/>
+          <input type="text" id="meal-name" class="fli" placeholder="例）自家製サラダ" maxlength="40" oninput="updMealTotal()" onfocus="mealFieldFocus(this)"/>
           <div class="fld">1個/1食あたり（kcal）</div>
-          <input type="number" id="meal-unit" class="fli" placeholder="240" min="0" max="99999" inputmode="numeric" oninput="updMealTotal()"/>
+          <input type="number" id="meal-unit" class="fli" placeholder="240" min="0" max="99999" inputmode="numeric" oninput="updMealTotal()" onfocus="mealFieldFocus(this)"/>
           <div style="font-size:11px;color:#6b7280;padding:0 14px 4px;line-height:1.6;">プリセットに無いものを記録できます。入力内容は上の合計に反映されます。</div>
         </div>
-        <button class="svbtn" id="meal-save-btn" onclick="saveMeal()" style="background:linear-gradient(135deg,#FB8C00,#E65100);margin-top:6px;">記録する</button>
-        <button class="rcbt" id="meal-del-btn" onclick="delMeal(S.editingMealId)" style="display:none;color:#ef4444;">この記録を削除</button>
+        <div class="meal-footer">
+          <button class="svbtn" id="meal-save-btn" onclick="saveMeal()" style="background:linear-gradient(135deg,#FB8C00,#E65100);">記録する</button>
+          <button class="rcbt" id="meal-del-btn" onclick="delMeal(S.editingMealId)" style="display:none;color:#ef4444;">この記録を削除</button>
+        </div>
       </div>
     </div>
 
@@ -1857,6 +1860,7 @@ function openMealInput(slot,dateStr){
   const sb=document.getElementById('meal-preset-search');if(sb)sb.value='';
   switchMealTab('preset');
   rMealSlotSeg();rMealFavs();rMealRecent();rMealPresets('');updMealTotal();
+  const _sh=document.querySelector('#meal-ov .ash');if(_sh)_sh.style.maxHeight='';
   document.getElementById('meal-ov').classList.add('on');
 }
 function editMeal(id){
@@ -1873,6 +1877,7 @@ function editMeal(id){
   const sb=document.getElementById('meal-preset-search');if(sb)sb.value='';
   switchMealTab('manual');
   rMealSlotSeg();rMealFavs();rMealRecent();rMealPresets('');updMealTotal();
+  const _sh=document.querySelector('#meal-ov .ash');if(_sh)_sh.style.maxHeight='';
   document.getElementById('meal-ov').classList.add('on');
 }
 function closeMealInput(){unlockScroll();document.getElementById('meal-ov').classList.remove('on');}
@@ -2511,6 +2516,17 @@ async function confirmClear(){
   toast('🗑 データを削除しました');
 }
 initDB();
+// キーボード表示時にボトムシート高さを可視ビューポートへ追従（入力欄が隠れないように）
+if(window.visualViewport){
+  const _vv=window.visualViewport;
+  function _fitSheets(){document.querySelectorAll('.aco.on .ash').forEach(el=>{el.style.maxHeight=Math.round(_vv.height*0.94)+'px';});}
+  _vv.addEventListener('resize',_fitSheets);
+  _vv.addEventListener('scroll',_fitSheets);
+}
+function mealFieldFocus(el){
+  if(window.visualViewport){const el2=document.querySelector('#meal-ov .ash');if(el2)el2.style.maxHeight=Math.round(window.visualViewport.height*0.94)+'px';}
+  setTimeout(()=>{try{el.scrollIntoView({block:'nearest'});}catch(e){}},350);
+}
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;const _n=nowYM();if(_n!==CUR_YM){CUR_YM=_n;goTab(S.tab||'home');}});
 </script>

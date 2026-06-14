@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v54 -->
+<title>家計簿</title><!-- v55 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -127,6 +127,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .mtabs{display:flex;position:sticky;top:0;z-index:4;background:#fff;border-bottom:1px solid #e5e7eb;}
 .mtab{flex:1;padding:12px 8px;font-size:13px;font-weight:600;color:#9ca3af;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;min-height:44px;}
 .mtab.on{color:#E65100;border-bottom-color:#FB8C00;}
+.mresult{height:44vh;height:44dvh;overflow-y:auto;overscroll-behavior:contain;}
 .mtab:active{opacity:.7;}
 .qchip:active{background:#FFF3E0;}
 .fchip{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:14px;padding:5px 9px;font-size:11px;color:#E65100;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
@@ -769,12 +770,18 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <!-- プリセットパネル -->
         <div id="mpanel-preset" role="tabpanel" aria-labelledby="mtab-preset">
           <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品を検索（よく食べる物・最近・全プリセット横断）" oninput="debMealPresets(this.value)" style="margin:10px 13px 8px;width:calc(100% - 26px);"/>
-          <div class="fld" style="display:flex;justify-content:space-between;align-items:center;"><span>⭐ よく食べる物</span><button type="button" onclick="registerFav()" style="background:none;border:none;color:#FB8C00;font-size:11px;font-weight:600;cursor:pointer;">＋今の内容を登録</button></div>
-          <div id="meal-fav-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
-          <div class="fld">🕘 最近使った</div>
-          <div id="meal-recent-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
-          <div class="fld">🍽 食品プリセット（タップで入力）</div>
-          <div id="meal-preset-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;"></div>
+          <div class="mresult">
+            <div id="meal-fav-sec">
+              <div class="fld" style="display:flex;justify-content:space-between;align-items:center;"><span>⭐ よく食べる物</span><button type="button" onclick="registerFav()" style="background:none;border:none;color:#FB8C00;font-size:11px;font-weight:600;cursor:pointer;">＋今の内容を登録</button></div>
+              <div id="meal-fav-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
+            </div>
+            <div id="meal-recent-sec">
+              <div class="fld">🕘 最近使った</div>
+              <div id="meal-recent-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
+            </div>
+            <div class="fld" id="meal-preset-fld">🍽 食品プリセット（タップで入力）</div>
+            <div id="meal-preset-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;align-content:flex-start;"></div>
+          </div>
         </div>
         <!-- 手入力パネル -->
         <div id="mpanel-manual" role="tabpanel" aria-labelledby="mtab-manual" hidden>
@@ -1767,6 +1774,12 @@ let _presetTimer=null;
 function debMealPresets(v){clearTimeout(_presetTimer);_presetTimer=setTimeout(()=>rMealPresets(v),150);}
 function rMealPresets(filter){
   filter=(filter||'').trim();
+  // 検索中は⭐/🕘を隠して結果に集中（高さは固定領域なので揺れない）
+  const searching=!!filter;
+  const fs=document.getElementById('meal-fav-sec'),rs=document.getElementById('meal-recent-sec'),pf=document.getElementById('meal-preset-fld');
+  if(fs)fs.style.display=searching?'none':'';
+  if(rs)rs.style.display=searching?'none':'';
+  if(pf)pf.style.display=searching?'none':'';
   let list=FOOD_PRESETS;
   if(filter)list=FOOD_PRESETS.filter(f=>f.n.includes(filter)||(f.c&&f.c.includes(filter)));
   const shown=list.slice(0,80);

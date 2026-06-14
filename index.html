@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v56 -->
+<title>家計簿</title><!-- v57 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -770,7 +770,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         </div>
         <!-- プリセットパネル -->
         <div id="mpanel-preset" role="tabpanel" aria-labelledby="mtab-preset">
-          <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品を検索（よく食べる物・最近・全プリセット横断）" oninput="debMealPresets(this.value)" style="margin:10px 13px 8px;width:calc(100% - 26px);"/>
+          <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品を検索（よく食べる物・最近・全プリセット横断）" oninput="debMealPresets(this.value)" onfocus="mealFieldFocus(this)" style="margin:10px 13px 8px;width:calc(100% - 26px);"/>
           <div class="mresult">
             <div id="meal-fav-sec">
               <div class="fld" style="display:flex;justify-content:space-between;align-items:center;"><span>⭐ よく食べる物</span><button type="button" onclick="registerFav()" style="background:none;border:none;color:#FB8C00;font-size:11px;font-weight:600;cursor:pointer;">＋今の内容を登録</button></div>
@@ -1860,7 +1860,7 @@ function openMealInput(slot,dateStr){
   const sb=document.getElementById('meal-preset-search');if(sb)sb.value='';
   switchMealTab('preset');
   rMealSlotSeg();rMealFavs();rMealRecent();rMealPresets('');updMealTotal();
-  const _sh=document.querySelector('#meal-ov .ash');if(_sh)_sh.style.maxHeight='';
+  _resetSheets();
   document.getElementById('meal-ov').classList.add('on');
 }
 function editMeal(id){
@@ -1877,10 +1877,10 @@ function editMeal(id){
   const sb=document.getElementById('meal-preset-search');if(sb)sb.value='';
   switchMealTab('manual');
   rMealSlotSeg();rMealFavs();rMealRecent();rMealPresets('');updMealTotal();
-  const _sh=document.querySelector('#meal-ov .ash');if(_sh)_sh.style.maxHeight='';
+  _resetSheets();
   document.getElementById('meal-ov').classList.add('on');
 }
-function closeMealInput(){unlockScroll();document.getElementById('meal-ov').classList.remove('on');}
+function closeMealInput(){unlockScroll();_resetSheets();document.getElementById('meal-ov').classList.remove('on');}
 async function saveMeal(){
   const name=document.getElementById('meal-name').value.trim();
   const unit=getUnit();const qty=getQty();const kcal=mealTotalKcal();
@@ -2516,16 +2516,35 @@ async function confirmClear(){
   toast('🗑 データを削除しました');
 }
 initDB();
-// キーボード表示時にボトムシート高さを可視ビューポートへ追従（入力欄が隠れないように）
+// キーボード表示時：開いているボトムシートが鍵盤の裏に潜らないよう、実測した重なり分だけ押し上げる
+function _fitSheets(){
+  if(!window.visualViewport)return;
+  const vv=window.visualViewport;
+  const visBottom=vv.offsetTop+vv.height; // 可視領域の下端（レイアウト座標）
+  document.querySelectorAll('.aco.on .ash, .ov.on .sh').forEach(sh=>{
+    // 一旦リセットして素の位置を測る
+    sh.style.marginBottom='';
+    sh.style.maxHeight='';
+    const rect=sh.getBoundingClientRect();
+    const overlap=rect.bottom-visBottom; // 鍵盤に隠れている量
+    if(overlap>1){
+      sh.style.maxHeight=Math.floor(vv.height*0.95)+'px';
+      // maxHeight変更で高さが縮むので再測してから押し上げ
+      const r2=sh.getBoundingClientRect();
+      const ov2=r2.bottom-visBottom;
+      if(ov2>0)sh.style.marginBottom=Math.ceil(ov2)+'px';
+    }
+  });
+}
+function _resetSheets(){document.querySelectorAll('.ash, .sh').forEach(sh=>{sh.style.marginBottom='';sh.style.maxHeight='';});}
 if(window.visualViewport){
-  const _vv=window.visualViewport;
-  function _fitSheets(){document.querySelectorAll('.aco.on .ash').forEach(el=>{el.style.maxHeight=Math.round(_vv.height*0.94)+'px';});}
-  _vv.addEventListener('resize',_fitSheets);
-  _vv.addEventListener('scroll',_fitSheets);
+  window.visualViewport.addEventListener('resize',_fitSheets);
+  window.visualViewport.addEventListener('scroll',_fitSheets);
 }
 function mealFieldFocus(el){
-  if(window.visualViewport){const el2=document.querySelector('#meal-ov .ash');if(el2)el2.style.maxHeight=Math.round(window.visualViewport.height*0.94)+'px';}
-  setTimeout(()=>{try{el.scrollIntoView({block:'nearest'});}catch(e){}},350);
+  // 鍵盤アニメ後に押し上げ＋対象欄を可視化（resizeが来ない端末向けの保険も兼ねる）
+  setTimeout(()=>{_fitSheets();try{el.scrollIntoView({block:'nearest'});}catch(e){}},300);
+  setTimeout(()=>{_fitSheets();},500);
 }
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;const _n=nowYM();if(_n!==CUR_YM){CUR_YM=_n;goTab(S.tab||'home');}});

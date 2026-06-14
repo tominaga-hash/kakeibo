@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v53 -->
+<title>家計簿</title><!-- v54 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -477,6 +477,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <div class="rtab" id="rt-subsc" onclick="switchRTab('subsc')">サブスク</div>
         <div class="rtab" id="rt-invest" onclick="switchRTab('invest')">投資</div>
         <div class="rtab" id="rt-furusato" onclick="switchRTab('furusato')">ふるさと納税</div>
+        <div class="rtab" id="rt-mealrep" onclick="switchRTab('mealrep')">食事</div>
       </div>
 
       <!-- Monthly -->
@@ -599,6 +600,17 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <div class="txw" id="fur-month-tbl" style="margin-bottom:11px;"></div>
         <div class="st2">🍑 今月の明細</div>
         <div class="txw" id="fur-list" style="margin-bottom:11px;"></div>
+        <div class="spacer"></div>
+      </div>
+
+      <!-- Meal report -->
+      <div class="rcon" id="rc-mealrep">
+        <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:10px;background:#fff;margin-bottom:2px;">
+          <button class="nb sp" style="height:30px;width:30px;font-size:17px;border-radius:50%;padding:0;" onclick="chMo(-1);rMealReport()">‹</button>
+          <span style="font-size:15px;font-weight:700;color:#111;" id="mr-mo-lbl">---</span>
+          <button class="nb sp" style="height:30px;width:30px;font-size:17px;border-radius:50%;padding:0;" onclick="chMo(1);rMealReport()">›</button>
+        </div>
+        <div id="mr-body"></div>
         <div class="spacer"></div>
       </div>
     </div>
@@ -1230,6 +1242,7 @@ function switchRTab(t){
   if(t==='subsc')rSubsc();
   if(t==='invest')rInvest();
   if(t==='furusato')rFurusato();
+  if(t==='mealrep')rMealReport();
 }
 function demo(t){
   if(t==='copy'){goTab('home');setTimeout(openCpModal,80);}
@@ -1901,6 +1914,85 @@ async function saveMealSettings(){
   await dbSaveSetting('profile',PROFILE);
   closeMealSettings();updMealTargetSv();if(S.tab==='meal')rMeal();
   toast(`🎯 目標 ${target}kcal に設定しました ✓`);
+}
+
+// ═══════════════════════════════════════════════════════
+//  REPORT — Meal monthly summary（食事まとめ）
+// ═══════════════════════════════════════════════════════
+function rMealReport(){
+  const months=getReportMonths();
+  const curYM=months[months.length-1];
+  const [y,m]=curYM.split('-').map(Number);
+  document.getElementById('mr-mo-lbl').textContent=`${y}年${m}月`;
+  const days=new Date(y,m,0).getDate();
+  const tgt=mealTarget();
+  const mMeals=MEALS.filter(x=>x.date&&x.date.startsWith(curYM+'-'));
+  const body=document.getElementById('mr-body');
+  if(S.charts.mr){try{S.charts.mr.destroy();}catch(e){}S.charts.mr=null;}
+  // 空状態
+  if(mMeals.length===0){
+    body.innerHTML='<div style="text-align:center;padding:40px 20px;color:#9ca3af;"><div style="font-size:40px;margin-bottom:8px;">🍽</div><div style="font-size:13px;">この月の食事記録はまだありません</div><button onclick="goTab(\'meal\')" style="margin-top:14px;background:linear-gradient(135deg,#FB8C00,#E65100);color:#fff;border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">食事を記録する</button></div>';
+    return;
+  }
+  // 日別集計
+  const kcByDay={};
+  mMeals.forEach(x=>{const d=parseInt(x.date.slice(8));kcByDay[d]=(kcByDay[d]||0)+(x.kcal||0);});
+  let total=0,daysWith=0,inDays=0;
+  for(let i=1;i<=days;i++){const k=kcByDay[i]||0;if(k>0){total+=k;daysWith++;if(k<=tgt)inDays++;}}
+  const overDays=daysWith-inDays;
+  const avg=daysWith?Math.round(total/daysWith):0;
+  const diff=avg-tgt;
+  const achieve=daysWith?Math.round(inDays/daysWith*100):0;
+  const recRate=Math.round(daysWith/days*100);
+  // スロット別 1日平均
+  const slotTot={breakfast:0,lunch:0,dinner:0,snack:0};
+  mMeals.forEach(x=>{if(slotTot[x.slot]!=null)slotTot[x.slot]+=(x.kcal||0);});
+  const slotAvgMax=Math.max(1,...MEAL_SLOTS.map(sl=>daysWith?slotTot[sl.id]/daysWith:0));
+  // よく食べたもの 上位5（回数主・kcal補助）
+  const nameMap={};
+  mMeals.forEach(x=>{const n=x.name||'(無題)';if(!nameMap[n])nameMap[n]={cnt:0,kc:0};nameMap[n].cnt++;nameMap[n].kc+=(x.kcal||0);});
+  const ranking=Object.entries(nameMap).sort((a,b)=>b[1].cnt-a[1].cnt||b[1].kc-a[1].kc).slice(0,5);
+
+  let html='';
+  // 1) サマリーカード
+  html+=`<div style="background:linear-gradient(135deg,#FB8C00,#E65100);border-radius:20px;padding:18px;margin:4px 13px 11px;color:#fff;box-shadow:0 4px 18px rgba(234,88,12,.3);">
+    <div style="font-size:10px;opacity:.85;">1日平均カロリー</div>
+    <div style="font-size:30px;font-weight:800;line-height:1.1;">${avg} <span style="font-size:14px;font-weight:600;">kcal</span></div>
+    <div style="font-size:11px;opacity:.9;margin-top:2px;">目標 ${tgt} kcal（${diff>=0?'+':''}${diff} kcal）</div>
+    <div style="display:flex;gap:16px;margin-top:12px;">
+      <div><div style="font-size:10px;opacity:.7;">合計</div><div style="font-size:13px;font-weight:700;">${total.toLocaleString()} kcal</div></div>
+      <div><div style="font-size:10px;opacity:.7;">記録日数</div><div style="font-size:13px;font-weight:700;">${daysWith}/${days}日</div></div>
+      <div><div style="font-size:10px;opacity:.7;">目標内</div><div style="font-size:13px;font-weight:700;">${inDays}日</div></div>
+    </div>
+  </div>`;
+  // 2) 日別棒グラフ
+  html+=`<div class="card" style="padding:13px;"><div style="font-size:13px;font-weight:600;color:#111;margin-bottom:7px;">日別カロリー（目標 ${tgt}）</div><div style="height:140px;"><canvas id="mr-chart"></canvas></div><div style="font-size:10px;color:#9ca3af;margin-top:5px;">🟩 目標以内　🟥 オーバー</div></div>`;
+  // 3) 区分別 横棒（1日平均）
+  html+='<div class="st2">区分別（1日平均）</div><div class="card" style="padding:13px;">';
+  MEAL_SLOTS.forEach(sl=>{
+    const av=daysWith?Math.round(slotTot[sl.id]/daysWith):0;
+    const pct=Math.round((daysWith?slotTot[sl.id]/daysWith:0)/slotAvgMax*100);
+    const ratio=total?Math.round(slotTot[sl.id]/total*100):0;
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;"><span style="width:54px;font-size:11px;color:#374151;">${sl.icon}${sl.name}</span><div style="flex:1;height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FB8C00,#FFB74D);border-radius:4px;"></div></div><span style="width:74px;text-align:right;font-size:11px;font-weight:600;color:#111;">${av}<span style="color:#9ca3af;font-weight:400;">/日 ${ratio}%</span></span></div>`;
+  });
+  html+='</div>';
+  // 4) 目標達成サマリー
+  html+=`<div class="st2">目標達成</div><div class="card" style="padding:13px;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span style="color:#16a34a;">目標内 ${inDays}日</span><span style="color:#ef4444;">オーバー ${overDays}日</span><span style="color:#6b7280;">達成率 ${achieve}%</span></div>
+    <div style="height:8px;background:#fee2e2;border-radius:4px;overflow:hidden;"><div style="height:100%;width:${achieve}%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:4px;"></div></div>
+    <div style="font-size:10px;color:#9ca3af;margin-top:6px;">記録率 ${recRate}%（${daysWith}/${days}日）</div>
+  </div>`;
+  // 5) よく食べたもの
+  html+='<div class="st2">よく食べたもの</div><div class="txw" style="margin-bottom:11px;">';
+  html+=ranking.map((r,i)=>`<div class="sub-row"><span style="width:18px;font-size:12px;color:#9ca3af;text-align:center;">${i+1}</span><div class="suin"><div class="sun">${esc(r[0])}</div><div class="sud">${r[1].cnt}回 ・ 合計${r[1].kc.toLocaleString()}kcal</div></div></div>`).join('');
+  html+='</div>';
+  body.innerHTML=html;
+  // 棒グラフ描画
+  const labels=[],data=[],colors=[];
+  for(let i=1;i<=days;i++){labels.push(i);const k=kcByDay[i]||0;data.push(k>0?k:null);colors.push(k>tgt?'rgba(239,68,68,.8)':'rgba(34,197,94,.75)');}
+  const tline=new Array(days).fill(tgt);
+  const cv=document.getElementById('mr-chart');
+  if(cv&&typeof Chart!=='undefined'){try{S.charts.mr=new Chart(cv.getContext('2d'),{data:{labels,datasets:[{type:'bar',label:'摂取',data,backgroundColor:colors,borderRadius:3,order:2},{type:'line',label:'目標',data:tline,borderColor:'rgba(234,88,12,.7)',borderWidth:1.5,borderDash:[4,3],pointRadius:0,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw==null?'記録なし':c.dataset.label+' '+c.raw+' kcal'}}},scales:{y:{beginAtZero:true,ticks:{font:{size:8},callback:v=>v},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:7},maxRotation:0,autoSkip:true,maxTicksLimit:10},grid:{display:false}}}}});}catch(e){console.warn('meal chart:',e.message);}}
 }
 
 // ═══════════════════════════════════════════════════════

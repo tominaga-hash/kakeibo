@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v59 -->
+<title>家計簿</title><!-- v57 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -743,7 +743,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
     </div>
 
     <!-- ── Meal input overlay ── -->
-    <div class="aco" id="meal-ov" onclick="if(event.target===this)closeMealInput()">
+    <div class="aco" id="meal-ov" onpointerdown="window._mealDown=(event.target===this)" onclick="if(event.target===this&&window._mealDown)closeMealInput()">
       <div class="ash" onclick="event.stopPropagation()">
         <div class="shdl"></div>
         <div class="shh"><div class="sht" id="meal-sh-ttl">食事を記録</div><button class="shc" onclick="closeMealInput()">×</button></div>

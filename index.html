@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v52 -->
+<title>家計簿</title><!-- v53 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -124,6 +124,10 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .qchip{background:#fff;border:1px solid #FFCC80;color:#E65100;border-radius:14px;padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
 .qstep{width:30px;height:30px;border:1px solid #FFCC80;background:#fff;color:#E65100;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;}
 .meal-fixhead{position:sticky;top:0;z-index:5;background:#fff;padding:4px 14px 8px;border-bottom:1px solid #f0ece4;}
+.mtabs{display:flex;position:sticky;top:0;z-index:4;background:#fff;border-bottom:1px solid #e5e7eb;}
+.mtab{flex:1;padding:12px 8px;font-size:13px;font-weight:600;color:#9ca3af;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;min-height:44px;}
+.mtab.on{color:#E65100;border-bottom-color:#FB8C00;}
+.mtab:active{opacity:.7;}
 .qchip:active{background:#FFF3E0;}
 .fchip{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:14px;padding:5px 9px;font-size:11px;color:#E65100;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
 .fchip .fx{color:#ef4444;font-weight:700;}
@@ -745,24 +749,28 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
             </div>
           </div>
         </div>
-        <!-- スクロール領域：選ぶ（主） -->
-        <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品を検索（よく食べる物・最近・全プリセット横断）" oninput="debMealPresets(this.value)" style="margin:10px 13px 8px;width:calc(100% - 26px);"/>
-        <div class="fld" style="display:flex;justify-content:space-between;align-items:center;"><span>⭐ よく食べる物</span><button type="button" onclick="registerFav()" style="background:none;border:none;color:#FB8C00;font-size:11px;font-weight:600;cursor:pointer;">＋今の内容を登録</button></div>
-        <div id="meal-fav-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
-        <div class="fld">🕘 最近使った</div>
-        <div id="meal-recent-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
-        <div class="fld">🍽 食品プリセット（タップで入力）</div>
-        <div id="meal-preset-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;"></div>
-        <!-- 手入力（従）：折りたたみ -->
-        <div onclick="toggleManual()" style="margin:2px 13px 4px;padding:9px 12px;background:#f5f5f4;border-radius:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-          <span style="font-size:12px;font-weight:600;color:#6b7280;">✏️ 手入力で追加・編集</span>
-          <span id="meal-manual-arrow" style="font-size:11px;color:#9ca3af;">▼</span>
+        <!-- 入力手段タブ -->
+        <div class="mtabs" role="tablist">
+          <button class="mtab on" id="mtab-preset" role="tab" aria-selected="true" aria-controls="mpanel-preset" onclick="switchMealTab('preset')">⭐ プリセット</button>
+          <button class="mtab" id="mtab-manual" role="tab" aria-selected="false" aria-controls="mpanel-manual" onclick="switchMealTab('manual')">✏️ 手入力</button>
         </div>
-        <div id="meal-manual" style="display:none;">
+        <!-- プリセットパネル -->
+        <div id="mpanel-preset" role="tabpanel" aria-labelledby="mtab-preset">
+          <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品を検索（よく食べる物・最近・全プリセット横断）" oninput="debMealPresets(this.value)" style="margin:10px 13px 8px;width:calc(100% - 26px);"/>
+          <div class="fld" style="display:flex;justify-content:space-between;align-items:center;"><span>⭐ よく食べる物</span><button type="button" onclick="registerFav()" style="background:none;border:none;color:#FB8C00;font-size:11px;font-weight:600;cursor:pointer;">＋今の内容を登録</button></div>
+          <div id="meal-fav-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
+          <div class="fld">🕘 最近使った</div>
+          <div id="meal-recent-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
+          <div class="fld">🍽 食品プリセット（タップで入力）</div>
+          <div id="meal-preset-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;"></div>
+        </div>
+        <!-- 手入力パネル -->
+        <div id="mpanel-manual" role="tabpanel" aria-labelledby="mtab-manual" hidden>
           <div class="fld">食べたもの</div>
           <input type="text" id="meal-name" class="fli" placeholder="例）自家製サラダ" maxlength="40" oninput="updMealTotal()"/>
           <div class="fld">1個/1食あたり（kcal）</div>
           <input type="number" id="meal-unit" class="fli" placeholder="240" min="0" max="99999" inputmode="numeric" oninput="updMealTotal()"/>
+          <div style="font-size:11px;color:#6b7280;padding:0 14px 4px;line-height:1.6;">プリセットに無いものを記録できます。入力内容は上の合計に反映されます。</div>
         </div>
         <button class="svbtn" id="meal-save-btn" onclick="saveMeal()" style="background:linear-gradient(135deg,#FB8C00,#E65100);margin-top:6px;">記録する</button>
         <button class="rcbt" id="meal-del-btn" onclick="delMeal(S.editingMealId)" style="display:none;color:#ef4444;">この記録を削除</button>
@@ -1765,8 +1773,16 @@ function updMealTotal(){
   const ud=document.getElementById('meal-unit-disp');if(ud)ud.textContent=getUnit()+' kcal';
   const sn=document.getElementById('meal-sel-name');if(sn)sn.textContent=nm||'未選択';
 }
-function toggleManual(){const el=document.getElementById('meal-manual');const ar=document.getElementById('meal-manual-arrow');const open=el.style.display==='none';el.style.display=open?'block':'none';if(ar)ar.textContent=open?'▲':'▼';}
-function setManual(open){const el=document.getElementById('meal-manual');const ar=document.getElementById('meal-manual-arrow');if(el)el.style.display=open?'block':'none';if(ar)ar.textContent=open?'▲':'▼';}
+function switchMealTab(t){
+  const isP=t==='preset';
+  document.getElementById('mtab-preset').classList.toggle('on',isP);
+  document.getElementById('mtab-manual').classList.toggle('on',!isP);
+  document.getElementById('mtab-preset').setAttribute('aria-selected',isP);
+  document.getElementById('mtab-manual').setAttribute('aria-selected',!isP);
+  document.getElementById('mpanel-preset').hidden=!isP;
+  document.getElementById('mpanel-manual').hidden=isP;
+  S.mealTab=t;
+}
 function setQty(q){document.getElementById('meal-qty').value=q;updMealTotal();}
 function stepQty(d){let q=getQty()+d;if(q<0)q=0;document.getElementById('meal-qty').value=(Math.round(q*10)/10);updMealTotal();}
 // よく食べる物
@@ -1813,7 +1829,7 @@ function openMealInput(slot,dateStr){
   document.getElementById('meal-unit').value='';
   document.getElementById('meal-qty').value='1';
   const sb=document.getElementById('meal-preset-search');if(sb)sb.value='';
-  setManual(false);
+  switchMealTab('preset');
   rMealSlotSeg();rMealFavs();rMealRecent();rMealPresets('');updMealTotal();
   document.getElementById('meal-ov').classList.add('on');
 }
@@ -1829,7 +1845,7 @@ function editMeal(id){
   document.getElementById('meal-unit').value=(m.unit!=null?m.unit:(m.kcal||0));
   document.getElementById('meal-qty').value=(m.qty!=null?m.qty:1);
   const sb=document.getElementById('meal-preset-search');if(sb)sb.value='';
-  setManual(true);
+  switchMealTab('manual');
   rMealSlotSeg();rMealFavs();rMealRecent();rMealPresets('');updMealTotal();
   document.getElementById('meal-ov').classList.add('on');
 }

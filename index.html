@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v57 -->
+<title>家計簿</title><!-- v61 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -135,6 +135,12 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .aco.kbd-up #mpanel-preset:not([hidden]),.aco.kbd-up #mpanel-manual:not([hidden]){flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
 .aco.kbd-up .mresult{flex:1 1 auto;height:auto;max-height:none;min-height:0;}
 .aco.kbd-up .meal-footer{position:static;}
+/* 食事シート：プリセット/手入力で初期サイズを揃える（min-height固定＋flexで記録ボタンを最下部に） */
+#meal-ov .ash{min-height:85vh;display:flex;flex-direction:column;}
+#meal-ov.kbd-up .ash{min-height:0;height:56vh;max-height:56vh;}
+#meal-ov #mpanel-preset:not([hidden]),#meal-ov #mpanel-manual:not([hidden]){flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+#meal-ov .mresult{flex:1 1 auto;height:auto;max-height:none;min-height:0;}
+#meal-ov .meal-footer{position:sticky;bottom:0;}
 .mtab:active{opacity:.7;}
 .qchip:active{background:#FFF3E0;}
 .fchip{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:14px;padding:5px 9px;font-size:11px;color:#E65100;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}

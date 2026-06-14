@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v50 -->
+<title>家計簿</title><!-- v51 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -59,14 +59,14 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 /* Nav */
 .nv{background:#F5F2EC;padding:11px 16px 9px;border-bottom:1px solid #e8e4dc;position:sticky;top:0;z-index:5;}
 .nt{font-size:19px;font-weight:700;color:#111;}
-.ns{font-size:11px;color:#9ca3af;margin-top:1px;}
+.ns{font-size:11px;color:#6b7280;margin-top:1px;}
 
 /* Tab bar */
 .tb{height:68px;background:rgba(255,255,255,.97);border-top:1px solid #e5e7eb;display:flex;align-items:center;padding:0;flex-shrink:0;box-sizing:border-box;}
-.tt{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;background:none;border:none;padding:0;-webkit-appearance:none;font-family:inherit;}
-.ti{font-size:22px;line-height:1.2;}
-.tl{font-size:10px;color:#9ca3af;font-weight:500;}
-.tt.on{background:linear-gradient(150deg,#5A9A50,#3A7030);border-radius:10px;margin:5px 2px;}
+.tt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;background:none;border:none;padding:0;-webkit-appearance:none;font-family:inherit;}
+.ti{font-size:20px;line-height:1.2;}
+.tl{font-size:9px;color:#6b7280;font-weight:500;white-space:nowrap;}
+.tt.on{background:linear-gradient(150deg,#5A9A50,#3A7030);border-radius:10px;margin:5px 1px;}
 .tt.on .tl{color:#fff !important;font-weight:600;}
 .tt.on .ti{filter:drop-shadow(0 0 2px rgba(255,255,255,.4));}
 .fw{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-top:-18px;}
@@ -96,7 +96,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .txic{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 .txin{flex:1;min-width:0;}
 .txn{font-size:13px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.txd{font-size:11px;color:#9ca3af;margin-top:1px;}
+.txd{font-size:11px;color:#6b7280;margin-top:1px;}
 .txa{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .exp{color:#C0684A;}.inc{color:#2E6828;}
 .swdel{position:absolute;right:0;top:0;bottom:0;width:68px;background:#ef4444;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;transform:translateX(68px);transition:transform .18s;cursor:pointer;}
@@ -156,7 +156,6 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .mo-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:#EBF5E8;border-radius:12px 12px 0 0;border:1px solid #A8D49A;border-bottom:none;}
 .mo-panel-title{font-size:13px;font-weight:700;color:#2E6828;}
 .mo-panel-total{font-size:12px;color:#2E6828;}
-.mo-date-group{}
 .mo-date-hdr{display:flex;align-items:center;justify-content:space-between;padding:5px 12px;background:#f5f5f7;border-bottom:1px solid #eee;font-size:11px;font-weight:700;color:#6b7280;}
 
 .day-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:#EBF5E8;border-radius:12px 12px 0 0;border:1px solid #A8D49A;border-bottom:none;}
@@ -298,7 +297,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .sr:last-child{border-bottom:none;}
 .si2{font-size:17px;width:28px;}
 .sl{flex:1;font-size:13px;color:#111;}
-.sv{font-size:11px;color:#9ca3af;margin-right:5px;}
+.sv{font-size:11px;color:#6b7280;margin-right:5px;}
 .sav{color:#d1d5db;font-size:15px;}
 .toggle{width:42px;height:25px;background:#e5e7eb;border-radius:13px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
 .toggle.on{background:#5A9A50;}
@@ -395,7 +394,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 
     <!-- ── HOME ── -->
     <div class="sc on" id="sc-home">
-      <div class="nv"><div style="display:flex;justify-content:space-between;align-items:flex-end;"><div><div class="nt">家計簿</div><div class="ns" id="home-month-lbl">2026年5月</div></div><span style="font-size:19px;cursor:pointer;" onclick="toast('通知はありません')">🔔</span></div></div>
+      <div class="nv"><div style="display:flex;justify-content:space-between;align-items:flex-end;"><div><div class="nt">家計簿</div><div class="ns" id="home-month-lbl">2026年5月</div></div><span style="font-size:19px;cursor:pointer;" role="button" aria-label="通知" onclick="toast('通知はありません')">🔔</span></div></div>
       <div class="bc">
         <div class="bl">今月の残高</div><div class="ba" id="h-bal">¥ 0</div>
         <div class="br"><div><div class="bil">💰 収入</div><div class="biv" id="h-inc">¥ 0</div></div><div><div class="bil">💸 支出</div><div class="biv" id="h-exp">¥ 0</div></div></div>
@@ -757,7 +756,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <div class="fld">🕘 最近使った</div>
         <div id="meal-recent-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px;"></div>
         <div class="fld">食品プリセットから選ぶ（タップで入力）</div>
-        <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品名で検索（例：バナナ）" oninput="rMealPresets(this.value)" style="margin-bottom:8px;"/>
+        <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品名で検索（例：バナナ）" oninput="debMealPresets(this.value)" style="margin-bottom:8px;"/>
         <div id="meal-preset-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px;max-height:148px;overflow-y:auto;"></div>
         <button class="svbtn" id="meal-save-btn" onclick="saveMeal()" style="background:linear-gradient(135deg,#FB8C00,#E65100);">記録する</button>
         <button class="rcbt" id="meal-del-btn" onclick="delMeal(S.editingMealId)" style="display:none;color:#ef4444;">この記録を削除</button>
@@ -829,7 +828,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
     <button class="tt on" id="tab-home" onclick="goTab('home')"><span class="ti">⌂</span><span class="tl">ホーム</span></button>
     <button class="tt" id="tab-cal" onclick="goTab('cal')"><span class="ti">📅</span><span class="tl">カレンダー</span></button>
     <button class="tt" id="tab-meal" onclick="goTab('meal')"><span class="ti">🍽</span><span class="tl">食事</span></button>
-    <div class="fw"><button class="fab" onclick="openSheet()">＋</button></div>
+    <div class="fw"><button class="fab" onclick="openSheet()" aria-label="収支を追加">＋</button></div>
     <button class="tt" id="tab-rep" onclick="goTab('rep')"><span class="ti">📊</span><span class="tl">レポート</span></button>
     <button class="tt" id="tab-set" onclick="goTab('set')"><span class="ti">⚙</span><span class="tl">設定</span></button>
   </div>
@@ -1234,7 +1233,8 @@ function demo(t){
 // ═══════════════════════════════════════════════════════
 function rHome(){
   const txs=mTx(CUR_YM);
-  const inc=sI(txs),exp=sE(txs),bal=inc-exp;
+  const subTotal=subTot(CUR_YM);
+  const inc=sI(txs),exp=sE(txs)+subTotal,bal=inc-exp;
   document.getElementById('h-bal').textContent=fmt(bal);
   document.getElementById('h-inc').textContent=fmt(inc);
   document.getElementById('h-exp').textContent=fmt(exp);
@@ -1247,7 +1247,6 @@ function rHome(){
   const [cy,cm]=CUR_YM.split('-');
   document.getElementById('home-month-lbl').textContent=`${cy}年${parseInt(cm)}月`;
   // サブスク
-  const subTotal=subTot(CUR_YM);
   document.getElementById('h-sub-total').textContent=fmt(subTotal);
   document.getElementById('h-sub-annual').textContent=fmt(subTotal*12);
   const today=new Date().getDate();
@@ -1256,6 +1255,7 @@ function rHome(){
   // 前月コピーバナー（設定タブへ移動済み）
   // Donut
   const ctot={};txs.filter(t=>t.type==='expense').forEach(t=>{ctot[t.category_id]=(ctot[t.category_id]||0)+t.amount;});
+  subsAt(CUR_YM).forEach(s=>{ctot[s.category_id]=(ctot[s.category_id]||0)+s.amount;});
   const ents=Object.entries(ctot).sort((a,b)=>b[1]-a[1]);
   try{if(S.charts.d)S.charts.d.destroy();}catch(e){}
   const canvas=document.getElementById('donut');
@@ -1338,24 +1338,19 @@ function rCal(){
     <div style="width:1px;height:28px;background:#e5e7eb;"></div>
     <div class="cal-sum-item"><div class="cal-sum-lbl">収支</div><div class="cal-sum-val" style="color:${balCol};">${bal>=0?'+':''}${fmt(bal)}</div></div>`;
 }
-let _calTapTimer=null,_calTapDay=null;
+let _calTapDay=null,_calTapAt=0;
 function selDay(d){
-  if(_calTapTimer&&_calTapDay===d){
+  // シングルタップで即パネル表示（遅延なし）
+  S.selDay=d;rCal();showDayPanel(d);
+  const now=Date.now();
+  if(_calTapDay===d&&(now-_calTapAt)<300){
     // ダブルタップ → 入力シートを開く
-    clearTimeout(_calTapTimer);_calTapTimer=null;_calTapDay=null;
-    S.selDay=d;rCal();
+    _calTapDay=null;_calTapAt=0;
     const [y,m]=S.calMonth.split('-').map(Number);
     const dateStr=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     openSheet();
     document.getElementById('d-inp').value=dateStr;
-  }else{
-    // シングルタップ → 一覧パネル表示
-    clearTimeout(_calTapTimer);_calTapDay=d;
-    _calTapTimer=setTimeout(()=>{
-      _calTapTimer=null;_calTapDay=null;
-      S.selDay=d;rCal();showDayPanel(d);
-    },280);
-  }
+  }else{_calTapDay=d;_calTapAt=now;}
 }
 function openDayInput(d){
   // 日別パネルの「＋追加」ボタン用
@@ -1671,6 +1666,9 @@ function rMeal(){
   const days=new Date(y,m,0).getDate();
   const tgt=mealTarget();
   const todayD=new Date();const isThisMonth=(todayD.getFullYear()===y&&todayD.getMonth()+1===m);
+  // 当月の食事を1回だけ日別に集計（O(件数)）
+  const kcByDay={};
+  MEALS.forEach(mm=>{if(mm.date&&mm.date.startsWith(S.mealMonth+'-')){const dd=parseInt(mm.date.slice(8));kcByDay[dd]=(kcByDay[dd]||0)+(mm.kcal||0);}});
   let html='',day=1;
   const rows=Math.ceil((first+days)/7);
   for(let r=0;r<rows;r++){
@@ -1679,8 +1677,7 @@ function rMeal(){
       const idx=r*7+c;
       if(idx<first||day>days){html+='<div class="cc emp"></div>';}
       else{
-        const ds=`${S.mealMonth}-${String(day).padStart(2,'0')}`;
-        const kc=dayKcal(ds);
+        const kc=kcByDay[day]||0;
         const isSel=S.mealSel===day,isToday=isThisMonth&&day===todayD.getDate();
         const over=kc>tgt&&tgt>0;
         const kcStr=kc>0?`<div class="camnt" style="color:${over?'#ef4444':'#E65100'};">${kc}</div>`:'';
@@ -1693,7 +1690,7 @@ function rMeal(){
   document.getElementById('meal-grid').innerHTML=html;
   // 月サマリー
   let monthKc=0,daysWith=0;
-  for(let i=1;i<=days;i++){const k=dayKcal(`${S.mealMonth}-${String(i).padStart(2,'0')}`);if(k>0){monthKc+=k;daysWith++;}}
+  for(let i=1;i<=days;i++){const k=kcByDay[i]||0;if(k>0){monthKc+=k;daysWith++;}}
   const avg=daysWith?Math.round(monthKc/daysWith):0;
   document.getElementById('meal-sum').innerHTML=`
     <div class="cal-sum-item"><div class="cal-sum-lbl">目標</div><div class="cal-sum-val" style="color:#E65100;">${tgt} kcal</div></div>
@@ -1739,6 +1736,8 @@ function rMealSlotSeg(){
   document.getElementById('meal-slot-seg').innerHTML=MEAL_SLOTS.map(sl=>`<button class="sbtn ${S.mealSlot===sl.id?'on':''}" onclick="pickMealSlot('${sl.id}')">${sl.icon}${sl.name}</button>`).join('');
 }
 function pickMealSlot(id){S.mealSlot=id;rMealSlotSeg();}
+let _presetTimer=null;
+function debMealPresets(v){clearTimeout(_presetTimer);_presetTimer=setTimeout(()=>rMealPresets(v),150);}
 function rMealPresets(filter){
   filter=(filter||'').trim();
   let list=FOOD_PRESETS;
@@ -1751,7 +1750,7 @@ function rMealPresets(filter){
 }
 function pickPreset(name,unit){document.getElementById('meal-name').value=name;document.getElementById('meal-unit').value=unit;updMealTotal();}
 // 個数×単価
-function getQty(){const q=parseFloat(document.getElementById('meal-qty').value);return(isNaN(q)||q<0)?1:q;}
+function getQty(){const q=parseFloat(document.getElementById('meal-qty').value);return(isNaN(q)||q<=0)?1:q;}
 function getUnit(){const u=parseFloat(document.getElementById('meal-unit').value);return(isNaN(u)||u<0)?0:u;}
 function mealTotalKcal(){return Math.round(getUnit()*getQty());}
 function updMealTotal(){document.getElementById('meal-total-prev').textContent=mealTotalKcal()+' kcal';}
@@ -2186,13 +2185,13 @@ async function addCat(){
   if(!name){toast('カテゴリ名を入力してください');return;}
   if(aC().find(c=>c.name===name&&c.type===S.newCatType)){toast('同じ名前が既にあります');return;}
   const cat={id:'c_'+uid(),name,icon,color:S.newCatColor||COLORS[5],type:S.newCatType,is_custom:true};
-  CC.push(cat);await db.customCats.put(cat);
+  try{await db.customCats.put(cat);CC.push(cat);}catch(e){toast('⚠️ 保存に失敗しました');return;}
   closeAddCat();rCatList();updCatCnt();
   toast('カテゴリを追加しました ✓');
 }
 async function delCat(id){
   if(!confirm('このカテゴリを削除しますか？'))return;
-  CC=CC.filter(c=>c.id!==id);await db.customCats.delete(id);
+  try{await db.customCats.delete(id);CC=CC.filter(c=>c.id!==id);}catch(e){toast('⚠️ 削除に失敗しました');return;}
   rCatList();updCatCnt();toast('削除しました');
 }
 
@@ -2228,13 +2227,13 @@ async function saveSubsc(){
   if(!amount||amount<=0){toast('金額を入力してください');return;}
   if(!day||day<1||day>31){toast('引き落とし日を1～31で入力してください');return;}
   const sub={id:'s_'+uid(),name,icon,amount,day,category_id:S.catId||'subsc',color:S.newSubColor||COLORS[6],startYM:nowYM()};
-  await db.subscriptions.add(sub);SUBS.push(sub);
+  try{await db.subscriptions.put(sub);SUBS.push(sub);}catch(e){toast('⚠️ 保存に失敗しました');return;}
   closeAddSubsc();rSubsc();rHome();
   toast('サブスクを追加しました ✓');
 }
 async function deleteSubsc(id){
   if(!confirm('このサブスクを削除しますか？'))return;
-  await db.subscriptions.delete(id);SUBS=SUBS.filter(s=>s.id!==id);
+  try{await db.subscriptions.delete(id);SUBS=SUBS.filter(s=>s.id!==id);}catch(e){toast('⚠️ 削除に失敗しました');return;}
   rSubsc();rHome();toast('削除しました');
 }
 // 退会：S.calMonth（表示中の月）以降を請求対象外にする。前月までは記録に残る
@@ -2244,18 +2243,18 @@ async function cancelSubsc(id){
   const prevYM_=prevYM(S.calMonth);const [py,pm]=prevYM_.split('-');
   if(!confirm(`「${s.name}」を${parseInt(m)}月以降 退会しますか？\n（${parseInt(pm)}月までは記録に残ります）`))return;
   s.endYM=S.calMonth;
-  await db.subscriptions.put(s);
+  try{await db.subscriptions.put(s);}catch(e){delete s.endYM;toast('⚠️ 更新に失敗しました');return;}
   refreshPrevMo();rHome();rCal();if(S.reportTab==='subsc')rSubsc();
-  toast(`「${s.name}」を${parseInt(m)}月以降 退会しました`);
+  toast(`「${esc(s.name)}」を${parseInt(m)}月以降 退会しました`);
 }
 // 退会取り消し（再開）
 async function resumeSubsc(id){
   const s=SUBS.find(x=>x.id===id);if(!s)return;
   if(!confirm(`「${s.name}」の退会を取り消して再開しますか？`))return;
-  delete s.endYM;
-  await db.subscriptions.put(s);
+  const _prevEnd=s.endYM;delete s.endYM;
+  try{await db.subscriptions.put(s);}catch(e){s.endYM=_prevEnd;toast('⚠️ 更新に失敗しました');return;}
   refreshPrevMo();rHome();rCal();if(S.reportTab==='subsc')rSubsc();
-  toast(`「${s.name}」を再開しました`);
+  toast(`「${esc(s.name)}」を再開しました`);
 }
 
 // =======================================================
@@ -2322,29 +2321,44 @@ async function doCsv(){
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},500);
   toast('📊 CSVを出力しました ✓');
 }
+// ── インポート検証ヘルパー（不正レコードは弾く） ──
+const _okId=x=>typeof x==='string'&&/^[A-Za-z0-9_]{1,64}$/.test(x);
+const _okDate=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);
+const _okYM=x=>typeof x==='string'&&/^\d{4}-\d{2}$/.test(x);
+const _okColor=x=>typeof x==='string'&&/^#[0-9a-fA-F]{3,8}$/.test(x);
+const _num=(x,def)=>{const n=Number(x);return Number.isFinite(n)?n:def;};
+const _str=(x,max)=>(x==null?'':String(x)).slice(0,max||120);
+function _sanTx(t){if(!t||!_okId(t.id)||!_okDate(t.date))return null;if(t.type!=='income'&&t.type!=='expense')return null;const amount=_num(t.amount,NaN);if(!Number.isFinite(amount)||amount<0)return null;return{id:t.id,type:t.type,date:t.date,amount:Math.round(amount),category_id:_okId(t.category_id)?t.category_id:'other',memo:_str(t.memo,200)};}
+function _sanSub(x){if(!x||!_okId(x.id))return null;const amount=_num(x.amount,NaN);if(!Number.isFinite(amount)||amount<0)return null;let day=Math.round(_num(x.day,1));if(day<1)day=1;if(day>31)day=31;const o={id:x.id,name:_str(x.name,40),icon:_str(x.icon,8)||'🔄',amount:Math.round(amount),day,category_id:_okId(x.category_id)?x.category_id:'subsc',color:_okColor(x.color)?x.color:'#8b5cf6'};if(_okYM(x.startYM))o.startYM=x.startYM;if(_okYM(x.endYM))o.endYM=x.endYM;return o;}
+function _sanMeal(x){if(!x||!_okId(x.id)||!_okDate(x.date))return null;const slot=MEAL_SLOTS.some(sl=>sl.id===x.slot)?x.slot:'breakfast';const unit=Math.max(0,_num(x.unit,_num(x.kcal,0)));let qty=_num(x.qty,1);if(!(qty>0))qty=1;const kcal=Math.round(_num(x.kcal,unit*qty));return{id:x.id,date:x.date,slot,name:_str(x.name,40),unit:Math.round(unit),qty,kcal:Math.max(0,kcal)};}
+function _sanFav(x){if(!x||!_okId(x.id))return null;return{id:x.id,name:_str(x.name,40),unit:Math.max(0,Math.round(_num(x.unit,0)))};}
+function _sanCat(x){if(!x||!_okId(x.id))return null;if(x.type!=='income'&&x.type!=='expense')return null;return{id:x.id,name:_str(x.name,40),icon:_str(x.icon,8)||'📌',color:_okColor(x.color)?x.color:'#8b5cf6',type:x.type,is_custom:true};}
+function _upsert(arr,store,clean){return clean.reduce((n,x)=>{const i=arr.findIndex(e=>e.id===x.id);if(i>=0){arr[i]=x;}else{arr.push(x);n++;}return n;},0);}
 async function loadJson(input){
   const file=input.files[0];if(!file)return;
   try{
     const text=await file.text();
     const d=JSON.parse(text);
-    if(!d.transactions&&!d.subscriptions)throw new Error('invalid');
-    const inTxs=(d.transactions||[]),inSubs=(d.subscriptions||[]);
-    const newTxCnt=inTxs.filter(t=>!TXS.find(e=>e.id===t.id)).length;
-    const newSubCnt=inSubs.filter(x=>!SUBS.find(e=>e.id===x.id)).length;
-    if(d.budget&&d.budget>0){BUDGET=d.budget;dbSaveSetting('budget',BUDGET);}
-    if(d.customCategories&&Array.isArray(d.customCategories)){
-      for(const cat of d.customCategories){await db.customCats.put(cat);const i=CC.findIndex(e=>e.id===cat.id);if(i>=0)CC[i]=cat;else CC.push(cat);}
+    if(typeof d!=='object'||d===null)throw new Error('invalid');
+    if(!Array.isArray(d.transactions)&&!Array.isArray(d.subscriptions)&&!Array.isArray(d.meals))throw new Error('invalid');
+    const cleanTx=(d.transactions||[]).map(_sanTx).filter(Boolean);
+    const cleanSub=(d.subscriptions||[]).map(_sanSub).filter(Boolean);
+    const cleanMeal=(d.meals||[]).map(_sanMeal).filter(Boolean);
+    const cleanFav=(d.favfoods||[]).map(_sanFav).filter(Boolean);
+    const cleanCat=(d.customCategories||[]).map(_sanCat).filter(Boolean);
+    if(_num(d.budget,0)>0){BUDGET=Math.round(_num(d.budget,BUDGET));dbSaveSetting('budget',BUDGET);}
+    if(cleanCat.length){await db.customCats.bulkPut(cleanCat);_upsert(CC,'customCats',cleanCat);}
+    let addTx=0,addSub=0;
+    if(cleanTx.length){await db.transactions.bulkPut(cleanTx);addTx=_upsert(TXS,'transactions',cleanTx);}
+    if(cleanSub.length){await db.subscriptions.bulkPut(cleanSub);addSub=_upsert(SUBS,'subscriptions',cleanSub);}
+    if(cleanMeal.length){await db.meals.bulkPut(cleanMeal);_upsert(MEALS,'meals',cleanMeal);}
+    if(cleanFav.length&&db.favfoods){await db.favfoods.bulkPut(cleanFav);_upsert(FAVS,'favfoods',cleanFav);}
+    if(d.profile&&typeof d.profile==='object'&&!Array.isArray(d.profile)){
+      const pr=d.profile;PROFILE={height:_num(pr.height,PROFILE.height),weight:_num(pr.weight,PROFILE.weight),age:_num(pr.age,PROFILE.age),sex:pr.sex==='female'?'female':'male',activity:_num(pr.activity,PROFILE.activity)||1.55,target:Math.round(_num(pr.target,PROFILE.target))||2000};
+      await dbSaveSetting('profile',PROFILE);updMealTargetSv();
     }
-    if(inTxs.length){await db.transactions.bulkPut(inTxs);inTxs.forEach(t=>{const i=TXS.findIndex(e=>e.id===t.id);if(i>=0)TXS[i]=t;else TXS.push(t);});}
-    if(inSubs.length){await db.subscriptions.bulkPut(inSubs);inSubs.forEach(x=>{const i=SUBS.findIndex(e=>e.id===x.id);if(i>=0)SUBS[i]=x;else SUBS.push(x);});}
-    const inMeals=(d.meals||[]);
-    if(inMeals.length){await db.meals.bulkPut(inMeals);inMeals.forEach(x=>{const i=MEALS.findIndex(e=>e.id===x.id);if(i>=0)MEALS[i]=x;else MEALS.push(x);});}
-    const inFavs=(d.favfoods||[]);
-    if(inFavs.length&&db.favfoods){await db.favfoods.bulkPut(inFavs);inFavs.forEach(x=>{const i=FAVS.findIndex(e=>e.id===x.id);if(i>=0)FAVS[i]=x;else FAVS.push(x);});}
-    if(d.profile){PROFILE={...PROFILE,...d.profile};await dbSaveSetting('profile',PROFILE);updMealTargetSv();}
     refreshPrevMo();rHome();updCatCnt();if(S.tab==='cal')rCal();if(S.tab==='rep')switchRTab(S.reportTab);if(S.tab==='meal')rMeal();
-    const updTx=inTxs.length-newTxCnt,updSub=inSubs.length-newSubCnt;
-    toast(`✅ 取引${newTxCnt}件追加${updTx?`・${updTx}件更新`:''}／サブスク${newSubCnt}件追加${updSub?`・${updSub}件更新`:''}`);
+    toast(`✅ 取引${addTx}件・サブスク${addSub}件を追加（更新含む）`);
   }catch(e){toast('⚠️ ファイルの形式が正しくありません');}
   input.value='';
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
-<title>家計簿</title><!-- v57 -->
+<title>家計簿</title><!-- v58 -->
 
 <!-- PWA / iOS -->
 <link rel="manifest" href="manifest.json">
@@ -129,6 +129,9 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
 .mtab.on{color:#E65100;border-bottom-color:#FB8C00;}
 .mresult{height:44vh;height:44dvh;overflow-y:auto;overscroll-behavior:contain;}
 .meal-footer{position:sticky;bottom:0;background:#fff;padding:8px 0 calc(8px + env(safe-area-inset-bottom));margin-top:4px;box-shadow:0 -4px 10px rgba(0,0,0,.04);}
+.aco.kbd-up{align-items:flex-start;}
+.aco.kbd-up .ash{max-height:40vh;margin-top:calc(env(safe-area-inset-top) + 6px);border-radius:18px;}
+.aco.kbd-up .mresult{height:20vh;}
 .mtab:active{opacity:.7;}
 .qchip:active{background:#FFF3E0;}
 .fchip{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:14px;padding:5px 9px;font-size:11px;color:#E65100;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
@@ -770,7 +773,7 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         </div>
         <!-- プリセットパネル -->
         <div id="mpanel-preset" role="tabpanel" aria-labelledby="mtab-preset">
-          <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品を検索（よく食べる物・最近・全プリセット横断）" oninput="debMealPresets(this.value)" onfocus="mealFieldFocus(this)" style="margin:10px 13px 8px;width:calc(100% - 26px);"/>
+          <input type="text" id="meal-preset-search" class="fli" placeholder="🔍 食品を検索（よく食べる物・最近・全プリセット横断）" oninput="debMealPresets(this.value)" onfocus="mealFieldFocus(this)" onblur="mealKbdBlur()" style="margin:10px 13px 8px;width:calc(100% - 26px);"/>
           <div class="mresult">
             <div id="meal-fav-sec">
               <div class="fld" style="display:flex;justify-content:space-between;align-items:center;"><span>⭐ よく食べる物</span><button type="button" onclick="registerFav()" style="background:none;border:none;color:#FB8C00;font-size:11px;font-weight:600;cursor:pointer;">＋今の内容を登録</button></div>
@@ -787,9 +790,9 @@ body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;backgro
         <!-- 手入力パネル -->
         <div id="mpanel-manual" role="tabpanel" aria-labelledby="mtab-manual" hidden>
           <div class="fld">食べたもの</div>
-          <input type="text" id="meal-name" class="fli" placeholder="例）自家製サラダ" maxlength="40" oninput="updMealTotal()" onfocus="mealFieldFocus(this)"/>
+          <input type="text" id="meal-name" class="fli" placeholder="例）自家製サラダ" maxlength="40" oninput="updMealTotal()" onfocus="mealFieldFocus(this)" onblur="mealKbdBlur()"/>
           <div class="fld">1個/1食あたり（kcal）</div>
-          <input type="number" id="meal-unit" class="fli" placeholder="240" min="0" max="99999" inputmode="numeric" oninput="updMealTotal()" onfocus="mealFieldFocus(this)"/>
+          <input type="number" id="meal-unit" class="fli" placeholder="240" min="0" max="99999" inputmode="numeric" oninput="updMealTotal()" onfocus="mealFieldFocus(this)" onblur="mealKbdBlur()"/>
           <div style="font-size:11px;color:#6b7280;padding:0 14px 4px;line-height:1.6;">プリセットに無いものを記録できます。入力内容は上の合計に反映されます。</div>
         </div>
         <div class="meal-footer">
@@ -2516,35 +2519,24 @@ async function confirmClear(){
   toast('🗑 データを削除しました');
 }
 initDB();
-// キーボード表示時：開いているボトムシートが鍵盤の裏に潜らないよう、実測した重なり分だけ押し上げる
-function _fitSheets(){
-  if(!window.visualViewport)return;
-  const vv=window.visualViewport;
-  const visBottom=vv.offsetTop+vv.height; // 可視領域の下端（レイアウト座標）
-  document.querySelectorAll('.aco.on .ash, .ov.on .sh').forEach(sh=>{
-    // 一旦リセットして素の位置を測る
-    sh.style.marginBottom='';
-    sh.style.maxHeight='';
-    const rect=sh.getBoundingClientRect();
-    const overlap=rect.bottom-visBottom; // 鍵盤に隠れている量
-    if(overlap>1){
-      sh.style.maxHeight=Math.floor(vv.height*0.95)+'px';
-      // maxHeight変更で高さが縮むので再測してから押し上げ
-      const r2=sh.getBoundingClientRect();
-      const ov2=r2.bottom-visBottom;
-      if(ov2>0)sh.style.marginBottom=Math.ceil(ov2)+'px';
-    }
-  });
-}
-function _resetSheets(){document.querySelectorAll('.ash, .sh').forEach(sh=>{sh.style.marginBottom='';sh.style.maxHeight='';});}
-if(window.visualViewport){
-  window.visualViewport.addEventListener('resize',_fitSheets);
-  window.visualViewport.addEventListener('scroll',_fitSheets);
-}
+// キーボード表示中はシートを上寄せの固定高さに切替（イベント駆動の再計算を廃し、シートが上下に揺れないようにする）
+function _resetSheets(){document.querySelectorAll('.aco').forEach(a=>a.classList.remove('kbd-up'));}
+let _kbdBlurT=null;
 function mealFieldFocus(el){
-  // 鍵盤アニメ後に押し上げ＋対象欄を可視化（resizeが来ない端末向けの保険も兼ねる）
-  setTimeout(()=>{_fitSheets();try{el.scrollIntoView({block:'nearest'});}catch(e){}},300);
-  setTimeout(()=>{_fitSheets();},500);
+  const aco=el.closest('.aco');
+  if(aco){clearTimeout(_kbdBlurT);aco.classList.add('kbd-up');}
+  // 対象欄を一度だけ可視化（以後はイベントに反応しないので揺れない）
+  setTimeout(()=>{try{el.scrollIntoView({block:'nearest'});}catch(e){}},250);
+}
+function mealKbdBlur(){
+  // 入力欄間の移動や変換確定での一瞬のblurでちらつかないようデバウンス
+  clearTimeout(_kbdBlurT);
+  _kbdBlurT=setTimeout(()=>{
+    const a=document.activeElement;
+    if(!(a&&a.tagName==='INPUT'&&a.closest&&a.closest('.aco'))){
+      document.querySelectorAll('.aco.kbd-up').forEach(x=>x.classList.remove('kbd-up'));
+    }
+  },200);
 }
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;const _n=nowYM();if(_n!==CUR_YM){CUR_YM=_n;goTab(S.tab||'home');}});
